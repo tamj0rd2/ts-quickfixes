@@ -12,14 +12,19 @@ export function activate(context: vscode.ExtensionContext): void {
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
-  const disposable = vscode.commands.registerCommand('ts-quickfixes.helloWorld', async () => {
+  const helloWorld = vscode.commands.registerCommand('ts-quickfixes.helloWorld', async () => {
     // The code you place here will be executed every time your command is executed
 
     // Display a message box to the user
     await vscode.window.showInformationMessage('Hello World from TS QuickFixes!')
   })
 
-  context.subscriptions.push(disposable)
+  const goodbyeWorld = vscode.commands.registerCommand('ts-quickfixes.goodbyeWorld', async () => {
+    await vscode.window.showInformationMessage('Goodbye World from TS QuickFixes!')
+  })
+
+  context.subscriptions.push(helloWorld)
+  context.subscriptions.push(goodbyeWorld)
 }
 
 // this method is called when your extension is deactivated

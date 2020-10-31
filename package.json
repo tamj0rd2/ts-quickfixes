@@ -17,7 +17,8 @@
     "url": "https://github.com/tamj0rd2/ts-quickfixes.git"
   },
   "activationEvents": [
-    "onCommand:ts-quickfixes.helloWorld"
+    "onCommand:ts-quickfixes.helloWorld",
+    "onCommand:ts-quickfixes.goodbyeWorld"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -25,6 +26,10 @@
       {
         "command": "ts-quickfixes.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "ts-quickfixes.goodbyeWorld",
+        "title": "Goodbye World"
       }
     ]
   },
