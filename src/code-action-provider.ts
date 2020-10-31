@@ -1,13 +1,34 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as vscode from 'vscode'
 
-export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
-  public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
+const TS_MISSING_PROPERTIES = {
+  code: 2739,
+  source: 'ts',
+} as const
 
-  public provideCodeActions(): vscode.ProviderResult<(vscode.CodeAction | vscode.Command)[]> {
-    return [this.createImplementAllMembersAction()]
+export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
+  provideCodeActions(
+    document: vscode.TextDocument,
+    range: vscode.Range | vscode.Selection,
+    context: vscode.CodeActionContext,
+    token: vscode.CancellationToken,
+  ): vscode.ProviderResult<(vscode.CodeAction | vscode.Command)[]> {
+    return context.diagnostics.reduce<vscode.CodeAction[]>((actions, diagnostic) => {
+      console.dir({ diagnostic })
+      if (this.diagnosticsMatch(diagnostic, TS_MISSING_PROPERTIES)) {
+        actions.push(this.createImplementAllMembersAction(document, range))
+      }
+
+      return actions
+    }, [])
   }
 
-  private createImplementAllMembersAction(): vscode.CodeAction {
+  public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
+
+  private createImplementAllMembersAction(
+    document: vscode.TextDocument,
+    range: vscode.Range,
+  ): vscode.CodeAction {
     const action = new vscode.CodeAction('Implement missing members', vscode.CodeActionKind.QuickFix)
     action.command = {
       command: 'ts-quickfixes.implementAllMembers',
@@ -15,6 +36,14 @@ export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
       tooltip: 'This will implement missing members',
     }
     action.isPreferred = true
+
     return action
+  }
+
+  private diagnosticsMatch(
+    diagnostic: vscode.Diagnostic,
+    matcher: Pick<vscode.Diagnostic, 'code' | 'source'>,
+  ): boolean {
+    return diagnostic.code === matcher.code && diagnostic.source === matcher.source
   }
 }
