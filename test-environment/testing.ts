@@ -4,4 +4,4 @@ interface Person {
   birthday: Date
 }
 
-export const tamara: Person = {}
+export const aPerson: Person = {}
