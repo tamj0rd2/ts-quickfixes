@@ -1,4 +1,5 @@
 import * as path from 'path'
+import { resolve } from 'path'
 
 import { runTests } from 'vscode-test'
 
@@ -13,7 +14,8 @@ async function main(): Promise<void> {
     const extensionTestsPath = path.resolve(__dirname, './suite/index')
 
     // Download VS Code, unzip it and run the integration test
-    await runTests({ extensionDevelopmentPath, extensionTestsPath })
+    const testEnvironmentFolder = resolve(process.cwd(), 'test-environment')
+    await runTests({ extensionDevelopmentPath, extensionTestsPath, launchArgs: [testEnvironmentFolder] })
   } catch (err) {
     console.error('Failed to run tests')
     process.exit(1)
