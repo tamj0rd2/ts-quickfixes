@@ -8,6 +8,7 @@ on:
 
 jobs:
   tests:
+    name: Tests
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
@@ -30,3 +31,32 @@ jobs:
         uses: GabrielBB/xvfb-action@v1.0
         with:
           run: npm test
+
+  publish:
+    name: Release and publish
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Read .nvmrc
+        run: echo ::set-output name=NVMRC::$(cat .nvmrc)
+        id: nvm
+      - name: Setup Node.jobs
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ steps.nvm.outputs.NVMRC }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
+      - name: Publish plugin
+        uses: JCofman/vscodeaction@master
+        env:
+          PUBLISHER_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
+        with:
+          args: publish -p $PUBLISHER_TOKEN
