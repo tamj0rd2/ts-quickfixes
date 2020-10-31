@@ -17,28 +17,17 @@
     "url": "git+https://github.com/tamj0rd2/ts-quickfixes.git"
   },
   "activationEvents": [
-    "onCommand:ts-quickfixes.helloWorld",
-    "onCommand:ts-quickfixes.goodbyeWorld"
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onCommand:ts-quickfixes.implementAllMembers"
   ],
   "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "ts-quickfixes.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "ts-quickfixes.goodbyeWorld",
-        "title": "Goodbye World"
-      }
-    ]
-  },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "lint": "npm run lint:base -- src --ext ts",
     "lint:base": "eslint --color --ignore-path .gitignore --cache",
-    "watch": "tsc -watch -p ./",
+    "watch": "tsc -p ./tsconfig.json --watch",
     "pretest": "npm run compile",
     "test": "node ./out/test/runTest.js"
   },
