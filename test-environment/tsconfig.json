@@ -1,27 +1,20 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es6",
-		"outDir": "out",
-    "lib": ["es6"],
-		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true,
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["esnext"],
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "typeRoots": ["./node_modules/@types"],
+    "strict": true,
     "noImplicitAny": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "strictNullChecks": true,
+    "outDir": "lib",
     "noEmit": true,
     "inlineSourceMap": true,
   },
-  "include": ["src/**/*.ts"],
-	"exclude": [
-		"node_modules",
-    ".vscode-test",
-    "test-environment"
-	]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "lib"]
 }
