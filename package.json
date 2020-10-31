@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/tamj0rd2/ts-quickfixes.git"
+    "url": "git+https://github.com/tamj0rd2/ts-quickfixes.git"
   },
   "activationEvents": [
     "onCommand:ts-quickfixes.helloWorld",
@@ -81,5 +81,12 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/tamj0rd2/ts-quickfixes/issues"
+  },
+  "homepage": "https://github.com/tamj0rd2/ts-quickfixes#readme",
+  "dependencies": {},
+  "keywords": [],
+  "author": ""
 }
