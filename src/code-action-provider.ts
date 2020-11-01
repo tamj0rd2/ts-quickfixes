@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { disconnect } from 'process'
 import * as vscode from 'vscode'
 
 const TS_MISSING_PROPERTIES = {
@@ -16,6 +17,7 @@ export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
     return context.diagnostics.reduce<vscode.CodeAction[]>((actions, diagnostic) => {
       console.dir({ diagnostic })
       if (this.diagnosticsMatch(diagnostic, TS_MISSING_PROPERTIES)) {
+        console.dir({ message: diagnostic.message, text: document.getText(diagnostic.range) })
         actions.push(this.createImplementAllMembersAction(document, range))
       }
 
@@ -36,6 +38,12 @@ export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
       tooltip: 'This will implement missing members',
     }
     action.isPreferred = true
+    action.edit = new vscode.WorkspaceEdit()
+    action.edit.replace(
+      document.uri,
+      new vscode.Range(range.start, range.start.translate(0, 10)),
+      'nice meme lol',
+    )
 
     return action
   }
