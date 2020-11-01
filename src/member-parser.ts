@@ -32,7 +32,7 @@ export class MemberParser {
     this.typeChecker = this.program.getTypeChecker()
   }
 
-  public getMembersForVariable(variableName: string): Members {
+  public getMissingMembersForVariable(variableName: string): Members {
     const variableNode = this.findNode(
       this.sourceFile,
       ts.isVariableStatement,
