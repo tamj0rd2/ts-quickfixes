@@ -2,7 +2,7 @@ import * as ts from 'typescript'
 import { resolve } from 'path'
 
 export const MemberType = {
-  String: "'todo'",
+  String: 'todo',
   Null: null,
   Number: 0,
   Union: null,
