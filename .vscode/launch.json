@@ -5,20 +5,6 @@
 {
 	"version": "0.2.0",
 	"configurations": [
-    {
-      "name": "TS testing",
-      "program": "${workspaceFolder}/src/test.ts",
-      "request": "launch",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js",
-        "!**/node_modules/**"
-      ],
-      "type": "pwa-node",
-      "console": "integratedTerminal"
-    },
 		{
 			"name": "Run Extension",
 			"type": "extensionHost",
@@ -48,6 +34,20 @@
 				"${workspaceFolder}/out/test/**/*.js"
 			],
 			"preLaunchTask": "${defaultBuildTask}"
-		}
+    },
+    {
+      "name": "TS testing",
+      "program": "${workspaceFolder}/src/test.ts",
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js",
+        "!**/node_modules/**"
+      ],
+      "type": "pwa-node",
+      "console": "integratedTerminal"
+    }
 	]
 }

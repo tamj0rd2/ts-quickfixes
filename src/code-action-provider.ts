@@ -33,12 +33,14 @@ export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
     action.isPreferred = true
     action.edit = new vscode.WorkspaceEdit()
 
-    const members = this.memberParser.getMembersForVariable(document.getText(range))
+    const members = this.memberParser.getMissingMembersForVariable(document.getText(range))
     const startLine = document.lineAt(range.start.line)
 
     if (range.isSingleLine && startLine.text.endsWith('{}')) {
       const replacedText = startLine.text.replace('{}', JSON.stringify(members, undefined, 2))
       action.edit.replace(document.uri, startLine.range, replacedText)
+    } else {
+      debugger
     }
 
     return action
