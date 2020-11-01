@@ -1,24 +1,22 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { disconnect } from 'process'
 import * as vscode from 'vscode'
+import { MemberParser } from './member-parser'
 
-const TS_MISSING_PROPERTIES = {
-  code: 2739,
+const TS_MISSING_PROPERTIES: DiagnosticsMatcher = {
+  codes: [2739, 2740],
   source: 'ts',
-} as const
+}
 
 export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
-  provideCodeActions(
+  public constructor(private readonly memberParser: MemberParser) {}
+
+  public provideCodeActions(
     document: vscode.TextDocument,
     range: vscode.Range | vscode.Selection,
     context: vscode.CodeActionContext,
-    token: vscode.CancellationToken,
   ): vscode.ProviderResult<(vscode.CodeAction | vscode.Command)[]> {
     return context.diagnostics.reduce<vscode.CodeAction[]>((actions, diagnostic) => {
-      console.dir({ diagnostic })
       if (this.diagnosticsMatch(diagnostic, TS_MISSING_PROPERTIES)) {
-        console.dir({ message: diagnostic.message, text: document.getText(diagnostic.range) })
-        actions.push(this.createImplementAllMembersAction(document, range))
+        actions.push(this.createImplementAllMembersAction(document, diagnostic.range))
       }
 
       return actions
@@ -32,26 +30,30 @@ export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
     range: vscode.Range,
   ): vscode.CodeAction {
     const action = new vscode.CodeAction('Implement missing members', vscode.CodeActionKind.QuickFix)
-    action.command = {
-      command: 'ts-quickfixes.implementAllMembers',
-      title: 'Implement missing members',
-      tooltip: 'This will implement missing members',
-    }
     action.isPreferred = true
     action.edit = new vscode.WorkspaceEdit()
-    action.edit.replace(
-      document.uri,
-      new vscode.Range(range.start, range.start.translate(0, 10)),
-      'nice meme lol',
-    )
+
+    const members = this.memberParser.getMembersForVariable(document.getText(range))
+    const startLine = document.lineAt(range.start.line)
+
+    if (range.isSingleLine && startLine.text.endsWith('{}')) {
+      const replacedText = startLine.text.replace('{}', JSON.stringify(members, undefined, 2))
+      action.edit.replace(document.uri, startLine.range, replacedText)
+    }
 
     return action
   }
 
-  private diagnosticsMatch(
-    diagnostic: vscode.Diagnostic,
-    matcher: Pick<vscode.Diagnostic, 'code' | 'source'>,
-  ): boolean {
-    return diagnostic.code === matcher.code && diagnostic.source === matcher.source
+  private diagnosticsMatch(diagnostic: vscode.Diagnostic, matcher: DiagnosticsMatcher): boolean {
+    if (typeof diagnostic.code === 'number') {
+      return matcher.codes.includes(diagnostic.code) && diagnostic.source === matcher.source
+    }
+
+    return false
   }
+}
+
+interface DiagnosticsMatcher {
+  codes: number[]
+  source: string
 }

@@ -18,8 +18,7 @@
   },
   "activationEvents": [
     "onLanguage:typescript",
-    "onLanguage:typescriptreact",
-    "onCommand:ts-quickfixes.implementAllMembers"
+    "onLanguage:typescriptreact"
   ],
   "main": "./out/extension.js",
   "scripts": {
