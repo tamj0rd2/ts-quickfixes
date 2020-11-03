@@ -40,7 +40,6 @@ export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
       const replacedText = startLine.text.replace('{}', JSON.stringify(members, undefined, 2))
       action.edit.replace(document.uri, startLine.range, replacedText)
     } else {
-      debugger
     }
 
     return action
