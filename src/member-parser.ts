@@ -33,27 +33,29 @@ export class MemberParser {
   }
 
   public getMissingMembersForVariable(variableName: string): Members {
-    const variableNode = this.findNode(
+    const { name, initializer } = this.findNode(
       this.sourceFile,
-      ts.isVariableStatement,
-      `Could not find variable statement ${variableName}`,
-    )
-
-    const variableIdentifierNode = this.findNode(
-      variableNode,
-      (node): node is ts.Identifier => {
-        if (!ts.isVariableDeclaration(node.parent)) return false
-        if (!ts.isIdentifier(node)) return false
-        const symbol = this.typeChecker.getSymbolAtLocation(node)
-        return symbol?.getName() === variableName
+      (node): node is ts.VariableDeclaration => {
+        if (!ts.isVariableDeclaration(node)) return false
+        return node.name.getText() === variableName
       },
-      `Could not find a variable identifier`,
+      `Could not find a variable identifier for ${variableName}`,
     )
 
-    const variableTypeInfo = this.typeChecker.getTypeAtLocation(variableIdentifierNode)
-    const typeSymbol = variableTypeInfo.symbol
+    if (!initializer) throw new Error(`Could not find an initializer for ${variableName}`)
+    if (!ts.isObjectLiteralExpression(initializer)) throw new Error(':O wat')
+    const declaredProperties = initializer.properties.reduce((properties, propertyNode) => {
+      const propertyName = propertyNode.name?.getText()
+      if (propertyName) properties.add(propertyName)
+      return properties
+    }, new Set<string>())
+
     const members: Members = {}
-    typeSymbol.members?.forEach((symbol) => this.collectMembersFromSymbol(symbol, members))
+    const typeSymbol = this.typeChecker.getTypeAtLocation(name).symbol
+    typeSymbol.members?.forEach((symbol) => {
+      if (declaredProperties.has(symbol.name)) return
+      this.collectMembersFromSymbol(symbol, members)
+    })
     return members
   }
 

@@ -14,6 +14,6 @@ interface Person {
 
 export const aPerson: Person = {}
 
-export const anotherPerson: Person = {
-  lastName: 'my name',
+export const personWithOneProperty: Person = {
+  lastName: 'my last name',
 }
