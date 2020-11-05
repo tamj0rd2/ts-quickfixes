@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { getAllDocumentText, getLineByText, getVariableValue, readFixture, waitUntil } from './test-helpers'
 
 suite('Acceptance tests', () => {
-  const testEnvironmentFolder = resolve(process.cwd(), 'test-environment')
+  const testEnvironmentFolder = resolve(__dirname, '../../../test-environment')
   void vscode.window.showInformationMessage('Starting acceptance tests')
 
   suite('Implement all memebers', () => {
@@ -28,7 +28,7 @@ suite('Acceptance tests', () => {
           variableLine.range.start.translate(0, charNumber + variableName.length),
         ),
       )
-      if (!codeActions) throw new Error('Expected to get some code actions back')
+      if (!codeActions?.length) throw new Error('Expected to get some code actions back')
       assert.strictEqual<string>(codeActions[0].title, 'Implement missing members')
 
       await vscode.workspace.applyEdit(codeActions[0].edit!)

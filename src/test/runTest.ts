@@ -12,10 +12,14 @@ async function main(): Promise<void> {
     // The path to test runner
     // Passed to --extensionTestsPath
     const extensionTestsPath = path.resolve(__dirname, './suite/index')
+    const testEnvironmentFolder = resolve(__dirname, '../../test-environment')
 
     // Download VS Code, unzip it and run the integration test
-    const testEnvironmentFolder = resolve(process.cwd(), 'test-environment')
-    await runTests({ extensionDevelopmentPath, extensionTestsPath, launchArgs: [testEnvironmentFolder] })
+    await runTests({
+      extensionDevelopmentPath,
+      extensionTestsPath,
+      launchArgs: [testEnvironmentFolder, '--disable-extensions'],
+    })
   } catch (err) {
     console.error('Failed to run tests')
     process.exit(1)
