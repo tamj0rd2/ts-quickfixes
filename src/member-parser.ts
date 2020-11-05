@@ -30,9 +30,7 @@ export class MemberParser {
   }
 
   public getMissingMembersForVariable(variableName: string): Members {
-    const { name, initializer } = this.getVariableDeclaration(variableName)
-    if (!initializer) throw new Error(`Could not find an initializer for ${variableName}`)
-    if (!ts.isObjectLiteralExpression(initializer)) throw new Error(':O wat')
+    const { name, initializer } = this.getInitializedVariableDeclaration(variableName)
 
     const declaredProperties = initializer.properties.reduce((properties, propertyNode) => {
       const propertyName = propertyNode.name?.getText()
@@ -50,8 +48,7 @@ export class MemberParser {
   }
 
   public getVariableInfo(variableName: string): VariableInfo {
-    const { initializer } = this.getVariableDeclaration(variableName)
-    if (!initializer) throw new Error(`There is no initializer for ${variableName}`)
+    const { initializer } = this.getInitializedVariableDeclaration(variableName)
 
     const getPos = (pos: number): Position => {
       const { line, character } = this.sourceFile.getLineAndCharacterOfPosition(pos)
@@ -59,14 +56,16 @@ export class MemberParser {
     }
 
     return {
-      text: initializer.getText(),
+      lines: initializer.properties.map((property) => property.getText()),
       start: getPos(initializer.pos),
       end: getPos(initializer.end),
     }
   }
 
-  private getVariableDeclaration(variableName: string): ts.VariableDeclaration {
-    return this.findNode(
+  private getInitializedVariableDeclaration(
+    variableName: string,
+  ): { name: ts.BindingName; initializer: ts.ObjectLiteralExpression } {
+    const { name, initializer } = this.findNode(
       this.sourceFile,
       (node): node is ts.VariableDeclaration => {
         if (!ts.isVariableDeclaration(node)) return false
@@ -74,6 +73,12 @@ export class MemberParser {
       },
       `Could not find a variable identifier for ${variableName}`,
     )
+
+    if (!initializer) throw new Error(`There is no initializer for ${variableName}`)
+    if (!ts.isObjectLiteralExpression(initializer))
+      throw new Error(`Variable ${variableName} is not an object literal`)
+
+    return { name, initializer }
   }
 
   private collectMembersFromSymbol({ name, valueDeclaration }: ts.Symbol, members: Members): Member {
@@ -147,7 +152,7 @@ interface Position {
 }
 
 export interface VariableInfo {
-  text: string
+  lines: string[]
   start: Position
   end: Position
 }

@@ -12,38 +12,27 @@ export class MemberFormatter {
   private readonly indentSize = 2
   private readonly indentCharacter = ' '
 
-  public format(initializer: string, members: Members, lineEnding: LineEnding): string {
-    if (initializer === '{}') {
-      const formattedMembers = Object.entries(members)
-        .map(([name, member]) => this.formatMember({ name, member, indentLevel: 1, lineEnding }))
-        .join(lineEnding)
-
-      return ['{', formattedMembers, '}'].join(lineEnding)
-    }
-
-    const lines = initializer.split(lineEnding)
-    const lastIndentedLine = [...lines].reverse().find((line) => line.startsWith(this.indentCharacter))
-    if (!lastIndentedLine) throw new Error('Inline variable initializers are not yet supported')
-
-    const indentLevel = this.getIndentSize(lastIndentedLine)
-    const formattedMembers = Object.entries(members).map(([name, member]) =>
-      this.formatMember({ name, member, indentLevel: indentLevel, lineEnding }),
+  public format(existingMembers: string[], members: Members, lineEnding: LineEnding): string {
+    const indentLevel = 1
+    const formattedExistingMembers = existingMembers.map((member) => this.formatExistingLine(member))
+    const formattedMissingMembers = Object.entries(members).map(([name, member]) =>
+      this.formatMember({ name, member, indentLevel, lineEnding }),
     )
 
-    return [
-      ...lines.slice(0, lines.length - 2),
-      `${lastIndentedLine},`,
-      ...formattedMembers,
-      lines[lines.length - 1],
-    ].join(lineEnding)
+    return ['{', ...formattedExistingMembers, ...formattedMissingMembers, '}'].join(lineEnding)
+  }
+
+  private formatExistingLine(line: string): string {
+    const indentation = this.indentCharacter.repeat(this.indentSize)
+    if (line.endsWith('{') || line.endsWith(',')) return `${indentation}${line}`
+    return `${indentation}${line},`
   }
 
   private formatMember({ name, member, indentLevel, lineEnding }: FormatMemberArgs): string {
     const indentation = this.indentCharacter.repeat(indentLevel * this.indentSize)
-    const prefix = `${indentation}${name}: `
 
-    if (member !== null && typeof member === 'object') {
-      const opening = `${prefix}{`
+    if (typeof member === 'object' && member !== null) {
+      const opening = `${indentation}${name}: {`
       const body = Object.entries(member)
         .map(([name, subMember]) =>
           this.formatMember({ name, member: subMember, indentLevel: indentLevel + 1, lineEnding }),
@@ -54,16 +43,7 @@ export class MemberFormatter {
     }
 
     const formattedMember = member === MemberType.String ? `'${member}'` : member
-    return `${prefix}${formattedMember},`
-  }
-
-  private getIndentSize(line: string): number {
-    let indentCharCount = 0
-    for (const char of line.split('')) {
-      if (char === this.indentCharacter) indentCharCount += 1
-      else break
-    }
-    return Math.floor(indentCharCount / this.indentSize)
+    return `${indentation}${name}: ${formattedMember},`
   }
 }
 
