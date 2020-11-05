@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode'
 import { TypescriptCodeActionProvider } from './code-action-provider'
+import { MemberFormatter } from './formatter'
 import { MemberParser } from './member-parser'
 
 // this method is called when your extension is activated
@@ -18,7 +19,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
       'typescript',
-      new TypescriptCodeActionProvider(new MemberParser()),
+      new TypescriptCodeActionProvider(new MemberParser(), new MemberFormatter()),
       {
         providedCodeActionKinds: TypescriptCodeActionProvider.providedCodeActionKinds,
       },

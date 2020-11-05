@@ -1,16 +1,15 @@
-import * as ts from 'typescript'
+import ts from 'typescript'
 import { resolve } from 'path'
 
 export const MemberType = {
   String: 'todo',
-  Null: null,
   Number: 0,
   Union: null,
   BuiltIn: null,
 } as const
 
-type Member = typeof MemberType[keyof typeof MemberType] | Members
-type Members = { [index: string]: Member }
+export type Member = typeof MemberType[keyof typeof MemberType] | Members
+export type Members = { [index: string]: Member }
 
 export class MemberParser {
   private readonly sourceFile: ts.SourceFile
@@ -97,8 +96,7 @@ export class MemberParser {
         }
       }
       default:
-        console.error(`unhandled object type for property ${name}`)
-        members[name] = MemberType.Null
+        throw new Error(`unhandled object type for property ${name}`)
     }
 
     return members

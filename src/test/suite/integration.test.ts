@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import assert from 'assert'
 import { resolve } from 'path'
 import * as vscode from 'vscode'
-import { getAllDocumentText, getLineByText, getVariableValue, waitUntil } from './test-helpers'
+import { getAllDocumentText, getLineByText, getVariableValue, readFixture, waitUntil } from './test-helpers'
 
 suite('Acceptance tests', () => {
   const testEnvironmentFolder = resolve(process.cwd(), 'test-environment')
@@ -34,22 +33,9 @@ suite('Acceptance tests', () => {
 
       await vscode.workspace.applyEdit(codeActions[0].edit!)
 
-      const variableValue = JSON.parse(getVariableValue(getAllDocumentText(), variableName))
+      const variableValue = getVariableValue(getAllDocumentText(), variableName)
 
-      assert.deepStrictEqual(variableValue, {
-        firstName: 'todo',
-        lastName: 'todo',
-        birthday: null,
-        address: {
-          city: 'todo',
-          postcode: 'todo',
-        },
-        mobileNumber: {
-          countryCode: 'todo',
-          phoneNumber: 0,
-        },
-        status: null,
-      })
+      assert.deepStrictEqual(variableValue, await readFixture('testing-aPerson'))
     })
 
     // TODO: come back and fix this
