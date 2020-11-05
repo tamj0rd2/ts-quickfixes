@@ -8,5 +8,5 @@ insert_final_newline = true
 tab_width = 2
 indent_style = space
 
-[*.md]
+[*.{md,txt}]
 insert_final_newline = false
