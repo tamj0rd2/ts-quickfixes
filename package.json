@@ -28,7 +28,7 @@
     "lint:base": "eslint --color --ignore-path .gitignore --cache",
     "watch": "tsc -p ./tsconfig.json --watch",
     "pretest": "npm run compile",
-    "test": "node ./out/test/runTest.js && jest",
+    "test": "jest && node ./out/test/runTest.js",
     "test:unit": "jest"
   },
   "jest": {

@@ -1,6 +1,6 @@
 import { readFile } from 'fs'
-import { resolve } from 'path'
 import * as vscode from 'vscode'
+import { TEST_ENV_FOLDER } from '../test_constants'
 
 export function getAllDocumentText(document?: vscode.TextDocument): string {
   if (!document) document = vscode.window.activeTextEditor?.document
@@ -21,11 +21,12 @@ export function getLineByText(document: vscode.TextDocument, target: string): vs
   return document.lineAt(lineNumber)
 }
 
-export async function waitUntil(predicate: () => boolean | Promise<boolean>, timeout = 5): Promise<void> {
+export async function waitUntil(predicate: () => boolean | Promise<boolean>, timeout = 15): Promise<void> {
   for (let attempt = 0; attempt < timeout; attempt++) {
     if (await predicate()) return
     await sleep(1)
   }
+  throw new Error('waitUntil timeout exceeded')
 }
 
 export function getVariableValue(textToSearch: string, variableName: string): string {
@@ -51,9 +52,8 @@ export function getVariableValue(textToSearch: string, variableName: string): st
 }
 
 export function readFixture(fileName: string): Promise<string> {
-  const fixturesFolder = resolve(process.cwd(), 'src/test/suite/fixtures')
   return new Promise((resolve, reject) => {
-    readFile(`${fixturesFolder}/${fileName}.txt`, (err, data) =>
+    readFile(`${TEST_ENV_FOLDER}/fixtures/${fileName}.txt`, (err, data) =>
       err ? reject(err) : resolve(data.toString()),
     )
   })

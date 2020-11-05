@@ -1,8 +1,11 @@
 import { MemberParser, MemberType } from './member-parser'
+import { TEST_ENV_FOLDER } from './test/test_constants'
 
 describe('MemberParser', () => {
+  const filePath = TEST_ENV_FOLDER + '/testing.ts'
+
   it('returns the correct members when there are none specified', () => {
-    const memberParser = new MemberParser()
+    const memberParser = new MemberParser(filePath)
 
     const members = memberParser.getMissingMembersForVariable('aPerson')
 
@@ -17,7 +20,7 @@ describe('MemberParser', () => {
   })
 
   it('returns the correct members when there is already one specified', () => {
-    const memberParser = new MemberParser()
+    const memberParser = new MemberParser(filePath)
 
     const members = memberParser.getMissingMembersForVariable('personWithOneProperty')
 

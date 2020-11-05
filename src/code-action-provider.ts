@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { MemberFormatter } from './formatter'
 import { MemberParser } from './member-parser'
 
-const TS_MISSING_PROPERTIES: DiagnosticsMatcher = {
+export const TS_MISSING_PROPERTIES: DiagnosticsMatcher = {
   codes: [2739, 2740],
   source: 'ts',
 }

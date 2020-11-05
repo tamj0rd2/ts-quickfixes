@@ -1,5 +1,4 @@
 import ts from 'typescript'
-import { resolve } from 'path'
 
 export const MemberType = {
   String: 'todo',
@@ -16,8 +15,7 @@ export class MemberParser {
   private readonly typeChecker: ts.TypeChecker
   private readonly program: ts.Program
 
-  constructor() {
-    const filePath = resolve(process.cwd(), './test-environment/testing.ts')
+  constructor(filePath: string) {
     this.program = ts.createProgram([filePath], {
       noEmit: true,
       module: ts.ModuleKind.CommonJS,
