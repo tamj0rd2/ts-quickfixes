@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { MemberFormatter } from './formatter'
 import { MemberParser } from './member-parser'
 
 const TS_MISSING_PROPERTIES: DiagnosticsMatcher = {
@@ -6,8 +7,13 @@ const TS_MISSING_PROPERTIES: DiagnosticsMatcher = {
   source: 'ts',
 }
 
+const EMPTY_INITIALIZER = '{}'
+
 export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
-  public constructor(private readonly memberParser: MemberParser) {}
+  public constructor(
+    private readonly memberParser: MemberParser,
+    private readonly memberFormatter: MemberFormatter,
+  ) {}
 
   public provideCodeActions(
     document: vscode.TextDocument,
@@ -36,8 +42,11 @@ export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
     const members = this.memberParser.getMissingMembersForVariable(document.getText(range))
     const startLine = document.lineAt(range.start.line)
 
-    if (range.isSingleLine && startLine.text.endsWith('{}')) {
-      const replacedText = startLine.text.replace('{}', JSON.stringify(members, undefined, 2))
+    if (range.isSingleLine && startLine.text.endsWith(EMPTY_INITIALIZER)) {
+      const replacedText = startLine.text.replace(
+        EMPTY_INITIALIZER,
+        this.memberFormatter.format(EMPTY_INITIALIZER, members),
+      )
       action.edit.replace(document.uri, startLine.range, replacedText)
     } else {
     }

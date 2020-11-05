@@ -1,3 +1,5 @@
+import { readFile } from 'fs'
+import { resolve } from 'path'
 import * as vscode from 'vscode'
 
 export function getAllDocumentText(document?: vscode.TextDocument): string {
@@ -46,6 +48,15 @@ export function getVariableValue(textToSearch: string, variableName: string): st
     { curlyCount: 0, declaration: [] },
   )
   return stuff.declaration.join('\n')
+}
+
+export function readFixture(fileName: string): Promise<string> {
+  const fixturesFolder = resolve(process.cwd(), 'src/test/suite/fixtures')
+  return new Promise((resolve, reject) => {
+    readFile(`${fixturesFolder}/${fileName}.txt`, (err, data) =>
+      err ? reject(err) : resolve(data.toString()),
+    )
+  })
 }
 
 function sleep(seconds: number): Promise<void> {
