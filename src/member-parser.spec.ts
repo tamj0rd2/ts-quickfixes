@@ -42,7 +42,7 @@ describe('MemberParser', () => {
       const info = parser.getVariableInfo('aPerson')
 
       expect(info).toStrictEqual<VariableInfo>({
-        text: `{}`,
+        lines: [],
         start: { character: 31, line: 14 },
         end: { character: 34, line: 14 },
       })
@@ -54,9 +54,21 @@ describe('MemberParser', () => {
       const info = parser.getVariableInfo('personWithOneProperty')
 
       expect(info).toStrictEqual<VariableInfo>({
-        text: `{\n  lastName: 'my last name',\n}`,
+        lines: [`lastName: 'my last name'`],
         start: { character: 45, line: 16 },
         end: { character: 2, line: 18 },
+      })
+    })
+
+    it(`returns the variable's text when it is a single line declaration`, () => {
+      const parser = new MemberParser(filePath)
+
+      const info = parser.getVariableInfo('inlinePersonWithTwoProperties')
+
+      expect(info).toStrictEqual<VariableInfo>({
+        lines: [`birthday: new Date()`, `status: 'Alive'`],
+        start: { character: 53, line: 20 },
+        end: { character: 95, line: 20 },
       })
     })
   })

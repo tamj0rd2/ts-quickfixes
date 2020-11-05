@@ -34,13 +34,13 @@ export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
     range: vscode.Range,
   ): vscode.CodeAction {
     const variableName = document.getText(range)
-    const { text, start, end } = this.memberParser.getVariableInfo(variableName)
+    const { lines, start, end } = this.memberParser.getVariableInfo(variableName)
     const rangeToReplace = new vscode.Range(
       new vscode.Position(start.line, start.character),
       new vscode.Position(end.line, end.character),
     )
     const members = this.memberParser.getMissingMembersForVariable(variableName)
-    const replacedVariable = this.memberFormatter.format(text, members, LineEnding.LF)
+    const replacedVariable = this.memberFormatter.format(lines, members, LineEnding.LF)
 
     const action = new vscode.CodeAction('Implement missing members', vscode.CodeActionKind.QuickFix)
     action.isPreferred = true
