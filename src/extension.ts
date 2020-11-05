@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 import { TypescriptCodeActionProvider } from './code-action-provider'
 import { MemberFormatter } from './formatter'
 import { MemberParser } from './member-parser'
+import { TEST_ENV_FOLDER } from './test/test_constants'
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -16,10 +17,13 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   )
 
+  // TODO: obviously this needs to not be hardcoded
+  const testingFilePath = TEST_ENV_FOLDER + '/testing.ts'
+
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
       'typescript',
-      new TypescriptCodeActionProvider(new MemberParser(), new MemberFormatter()),
+      new TypescriptCodeActionProvider(new MemberParser(testingFilePath), new MemberFormatter()),
       {
         providedCodeActionKinds: TypescriptCodeActionProvider.providedCodeActionKinds,
       },

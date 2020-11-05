@@ -1,7 +1,6 @@
 import * as path from 'path'
-import { resolve } from 'path'
-
 import { runTests } from 'vscode-test'
+import { TEST_ENV_FOLDER } from './test_constants'
 
 async function main(): Promise<void> {
   try {
@@ -14,8 +13,11 @@ async function main(): Promise<void> {
     const extensionTestsPath = path.resolve(__dirname, './suite/index')
 
     // Download VS Code, unzip it and run the integration test
-    const testEnvironmentFolder = resolve(process.cwd(), 'test-environment')
-    await runTests({ extensionDevelopmentPath, extensionTestsPath, launchArgs: [testEnvironmentFolder] })
+    await runTests({
+      extensionDevelopmentPath,
+      extensionTestsPath,
+      launchArgs: [TEST_ENV_FOLDER, '--disable-extensions'],
+    })
   } catch (err) {
     console.error('Failed to run tests')
     process.exit(1)
