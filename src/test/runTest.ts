@@ -14,6 +14,8 @@ async function main(): Promise<void> {
     const extensionTestsPath = path.resolve(__dirname, './suite/index')
     const testEnvironmentFolder = resolve(__dirname, '../../test-environment')
 
+    console.dir({ extensionTestsPath, testEnvironmentFolder })
+
     // Download VS Code, unzip it and run the integration test
     await runTests({
       extensionDevelopmentPath,

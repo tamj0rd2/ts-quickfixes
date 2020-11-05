@@ -5,6 +5,7 @@ import { getAllDocumentText, getLineByText, getVariableValue, readFixture, waitU
 
 suite('Acceptance tests', () => {
   const testEnvironmentFolder = resolve(__dirname, '../../../test-environment')
+  console.dir({ testEnvironmentFolder })
   void vscode.window.showInformationMessage('Starting acceptance tests')
 
   suite('Implement all memebers', () => {
@@ -19,6 +20,8 @@ suite('Acceptance tests', () => {
       const lineNumber = variableLine.range.start.line
       const charNumber = variableLine.text.indexOf(variableName)
       textEditor.selection = new vscode.Selection(lineNumber, charNumber, lineNumber, charNumber)
+
+      console.dir({ documentText: getAllDocumentText() })
 
       const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
         'vscode.executeCodeActionProvider',
