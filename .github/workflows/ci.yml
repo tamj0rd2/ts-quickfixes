@@ -49,9 +49,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
-      - name: Publish plugin
+        run: echo "::set-output name=release_output::$(npx semantic-release)"
+        id: release
+      - name: Publish extension
         uses: JCofman/vscodeaction@master
+        if: ${{ !contains('There are no relevant changes', steps.hello.outputs.release_output) }}
         env:
           PUBLISHER_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
         with:
