@@ -1,13 +1,11 @@
 import * as vscode from 'vscode'
-import { MemberFormatter } from './formatter'
+import { LineEnding, MemberFormatter } from './formatter'
 import { MemberParser } from './member-parser'
 
 export const TS_MISSING_PROPERTIES: DiagnosticsMatcher = {
   codes: [2739, 2740],
   source: 'ts',
 }
-
-const EMPTY_INITIALIZER = '{}'
 
 export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
   public constructor(
@@ -35,22 +33,19 @@ export class TypescriptCodeActionProvider implements vscode.CodeActionProvider {
     document: vscode.TextDocument,
     range: vscode.Range,
   ): vscode.CodeAction {
+    const variableName = document.getText(range)
+    const { text, start, end } = this.memberParser.getVariableInfo(variableName)
+    const rangeToReplace = new vscode.Range(
+      new vscode.Position(start.line, start.character),
+      new vscode.Position(end.line, end.character),
+    )
+    const members = this.memberParser.getMissingMembersForVariable(variableName)
+    const replacedVariable = this.memberFormatter.format(text, members, LineEnding.LF)
+
     const action = new vscode.CodeAction('Implement missing members', vscode.CodeActionKind.QuickFix)
     action.isPreferred = true
     action.edit = new vscode.WorkspaceEdit()
-
-    const members = this.memberParser.getMissingMembersForVariable(document.getText(range))
-    const startLine = document.lineAt(range.start.line)
-
-    if (range.isSingleLine && startLine.text.endsWith(EMPTY_INITIALIZER)) {
-      const replacedText = startLine.text.replace(
-        EMPTY_INITIALIZER,
-        this.memberFormatter.format(EMPTY_INITIALIZER, members),
-      )
-      action.edit.replace(document.uri, startLine.range, replacedText)
-    } else {
-    }
-
+    action.edit.replace(document.uri, rangeToReplace, replacedVariable)
     return action
   }
 

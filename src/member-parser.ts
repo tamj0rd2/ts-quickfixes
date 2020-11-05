@@ -30,17 +30,10 @@ export class MemberParser {
   }
 
   public getMissingMembersForVariable(variableName: string): Members {
-    const { name, initializer } = this.findNode(
-      this.sourceFile,
-      (node): node is ts.VariableDeclaration => {
-        if (!ts.isVariableDeclaration(node)) return false
-        return node.name.getText() === variableName
-      },
-      `Could not find a variable identifier for ${variableName}`,
-    )
-
+    const { name, initializer } = this.getVariableDeclaration(variableName)
     if (!initializer) throw new Error(`Could not find an initializer for ${variableName}`)
     if (!ts.isObjectLiteralExpression(initializer)) throw new Error(':O wat')
+
     const declaredProperties = initializer.properties.reduce((properties, propertyNode) => {
       const propertyName = propertyNode.name?.getText()
       if (propertyName) properties.add(propertyName)
@@ -48,12 +41,39 @@ export class MemberParser {
     }, new Set<string>())
 
     const members: Members = {}
-    const typeSymbol = this.typeChecker.getTypeAtLocation(name).symbol
-    typeSymbol.members?.forEach((symbol) => {
+    const { symbol } = this.typeChecker.getTypeAtLocation(name)
+    symbol.members?.forEach((symbol) => {
       if (declaredProperties.has(symbol.name)) return
       this.collectMembersFromSymbol(symbol, members)
     })
     return members
+  }
+
+  public getVariableInfo(variableName: string): VariableInfo {
+    const { initializer } = this.getVariableDeclaration(variableName)
+    if (!initializer) throw new Error(`There is no initializer for ${variableName}`)
+
+    const getPos = (pos: number): Position => {
+      const { line, character } = this.sourceFile.getLineAndCharacterOfPosition(pos)
+      return { line: line, character: character + 1 }
+    }
+
+    return {
+      text: initializer.getText(),
+      start: getPos(initializer.pos),
+      end: getPos(initializer.end),
+    }
+  }
+
+  private getVariableDeclaration(variableName: string): ts.VariableDeclaration {
+    return this.findNode(
+      this.sourceFile,
+      (node): node is ts.VariableDeclaration => {
+        if (!ts.isVariableDeclaration(node)) return false
+        return node.name.getText() === variableName
+      },
+      `Could not find a variable identifier for ${variableName}`,
+    )
   }
 
   private collectMembersFromSymbol({ name, valueDeclaration }: ts.Symbol, members: Members): Member {
@@ -118,4 +138,16 @@ export class MemberParser {
 
     throw new Error(failureMessage)
   }
+}
+
+interface Position {
+  /** lines are 0 indexed */
+  line: number
+  character: number
+}
+
+export interface VariableInfo {
+  text: string
+  start: Position
+  end: Position
 }
