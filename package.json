@@ -28,14 +28,9 @@
     "lint:base": "eslint --color --ignore-path .gitignore --cache",
     "watch": "tsc -p ./tsconfig.json --watch",
     "pretest": "npm run compile",
-    "test": "jest && node ./out/test/runTest.js",
-    "test:unit": "jest"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testMatch": [
-      "<rootDir>/src/**/*.spec.ts"
-    ]
+    "test": "run-s test:unit test:e2e",
+    "test:unit": "cross-env TEST_MODE=unit jest",
+    "test:e2e": "cross-env TEST_MODE=e2e node ./out/test/runTest.js"
   },
   "husky": {
     "hooks": {
@@ -53,12 +48,12 @@
     "@semantic-release/git": "^9.0.0",
     "@semantic-release/github": "^7.1.1",
     "@types/glob": "^7.1.3",
-    "@types/mocha": "^8.0.0",
     "@types/node": "^12.19.3",
     "@types/vscode": "^1.50.0",
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",
     "commitizen": "^4.2.2",
+    "cross-env": "^7.0.2",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^7.9.0",
     "eslint-config-prettier": "^6.11.0",
@@ -68,11 +63,12 @@
     "husky": "^4.3.0",
     "jest": "^26.6.1",
     "lint-staged": "^10.5.0",
-    "mocha": "^8.1.3",
+    "npm-run-all": "^4.1.5",
     "prettier": "^2.1.1",
+    "strip-ansi": "^6.0.0",
     "ts-jest": "^26.4.3",
     "ts-node": "^9.0.0",
-    "typescript": "^4.0.2",
+    "typescript": "^4.0.5",
     "vscode-test": "^1.4.0"
   },
   "config": {

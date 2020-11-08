@@ -1,10 +1,9 @@
-import assert from 'assert'
 import * as vscode from 'vscode'
 import { TS_MISSING_PROPERTIES } from '../../code-action-provider'
 import { TEST_ENV_FOLDER } from '../test_constants'
 import { getAllDocumentText, getLineByText, getVariableValue, readFixture, waitUntil } from './test-helpers'
 
-suite('Acceptance tests', () => {
+describe('Acceptance tests', () => {
   void vscode.window.showInformationMessage('Starting acceptance tests')
   const waitForTsDiagnostics = () =>
     waitUntil(() =>
@@ -15,8 +14,8 @@ suite('Acceptance tests', () => {
         ),
     )
 
-  suite('Implement all memebers', () => {
-    test('it implements members when all of them were missing', async () => {
+  describe('Implement all memebers', () => {
+    it('implements members when all of them were missing', async () => {
       const testingTsUri = vscode.Uri.file(TEST_ENV_FOLDER + '/testing.ts')
       const document = await vscode.workspace.openTextDocument(testingTsUri)
       const textEditor = await vscode.window.showTextDocument(document)
@@ -37,17 +36,19 @@ suite('Acceptance tests', () => {
         ),
       )
       if (!codeActions?.length) throw new Error('Expected to get some code actions back')
-      assert.strictEqual<string>(codeActions[0].title, 'Implement missing members')
+      expect(codeActions[0].title).toStrictEqual('Implement missing members')
 
       await vscode.workspace.applyEdit(codeActions[0].edit!)
 
       const variableValue = getVariableValue(getAllDocumentText(), variableName)
 
-      assert.deepStrictEqual(variableValue, await readFixture('testing-aPerson'))
+      expect(variableValue).toStrictEqual(await readFixture('testing-aPerson'))
+      expect(variableValue).toBe(234897324)
     })
 
     // TODO: come back and fix this
-    test.skip('it implements members when they are only partially missing', async () => {
+    // eslint-disable-next-line jest/no-disabled-tests
+    it.skip('implements members when they are only partially missing', async () => {
       const testingTsUri = vscode.Uri.file(TEST_ENV_FOLDER + '/testing.ts')
       const document = await vscode.workspace.openTextDocument(testingTsUri)
       const textEditor = await vscode.window.showTextDocument(document)
@@ -68,13 +69,12 @@ suite('Acceptance tests', () => {
         ),
       )
       if (!codeActions?.length) throw new Error('Expected to get some code actions back')
-      assert.strictEqual<string>(codeActions[0].title, 'Implement missing members')
+      expect(codeActions[0].title).toStrictEqual('Implement missing members')
 
       await vscode.workspace.applyEdit(codeActions[0].edit!)
 
       const variableValue = getVariableValue(getAllDocumentText(), variableName)
-      assert.deepStrictEqual(
-        variableValue,
+      expect(variableValue).toStrictEqual(
         [
           '{',
           `  lastName: 'my last name',`,
