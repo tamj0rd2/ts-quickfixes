@@ -1,3 +1,4 @@
 import { resolve } from 'path'
 
-export const TEST_ENV_FOLDER = resolve(__dirname, '../../test-environment')
+export const ROOT_DIR = resolve(__dirname, '../..')
+export const TEST_ENV_FOLDER = resolve(ROOT_DIR, 'test-environment')

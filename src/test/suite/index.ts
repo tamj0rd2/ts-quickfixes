@@ -1,39 +1,30 @@
-import path from 'path'
-import Mocha from 'mocha'
-import glob from 'glob'
+import { runCLI } from '@jest/core'
+import type { Config } from '@jest/types'
+import { ROOT_DIR } from '../test_constants'
+import stripAnsi from 'strip-ansi'
 
-export function run(): Promise<void> {
-  // Create the mocha test
-  const mocha = new Mocha({
-    ui: 'tdd',
-    color: true,
-    timeout: 20000,
-  })
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function run(): Promise<void> {
+  console.log(ROOT_DIR)
 
-  const testsRoot = path.resolve(__dirname, '..')
+  const config: Config.Argv = {
+    $0: '',
+    _: [],
+    runInBand: true,
+    setupFiles: [`${ROOT_DIR}/out/test/vscode-framework-setup.js`],
+    testEnvironment: `${ROOT_DIR}/out/test/vscode-test-environment.js`,
+  }
 
-  return new Promise((c, e) => {
-    glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
-      if (err) {
-        return e(err)
-      }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { results } = await runCLI(config, [`${ROOT_DIR}/jest.config.js`])
 
-      // Add files to the test suite
-      files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)))
-
-      try {
-        // Run the mocha test
-        mocha.run((failures) => {
-          if (failures > 0) {
-            e(new Error(`${failures} tests failed.`))
-          } else {
-            c()
-          }
-        })
-      } catch (err) {
-        console.error(err)
-        e(err)
-      }
-    })
+  results.testResults.forEach((testResult) => {
+    const intro = testResult.skipped
+      ? 'Skipped'
+      : testResult.numFailingTests > 0 || testResult.failureMessage
+      ? 'Failed'
+      : 'Passed'
+    const failureMessage = testResult.failureMessage ? `\n${stripAnsi(testResult.failureMessage)}` : ''
+    console.log(`[${intro.toUpperCase()}] ${testResult.testFilePath}${failureMessage}`)
   })
 }
