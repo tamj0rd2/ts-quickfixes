@@ -13,7 +13,7 @@
     "strictNullChecks": true,
     "outDir": "lib",
     "noEmit": true,
-    "inlineSourceMap": true,
+    "inlineSourceMap": true
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "lib"]

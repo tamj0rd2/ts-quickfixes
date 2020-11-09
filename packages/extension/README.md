@@ -1,4 +1,4 @@
-# TS QuickFixes
+# @ts-quickfixes/extension
 
 This extension will provide some quickfixes that are currently not offered by vscode
 
