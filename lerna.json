@@ -1,5 +1,5 @@
 {
-  "packages": ["apps/extension"],
+  "packages": ["packages/extension"],
   "version": "independent",
   "npmClient": "npm"
 }
