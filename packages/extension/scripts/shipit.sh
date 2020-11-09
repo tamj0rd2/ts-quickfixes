@@ -21,11 +21,11 @@ function finish {
 }
 trap finish EXIT
 
-CURRENT_VERSION_NUMBER="$(node ./get-marketplace-version.js)"
+CURRENT_VERSION_NUMBER="$(node ./scripts/get-marketplace-version.js)"
 npx semantic-release
 
 print 'Semantic release complete'
-UPDATED_VERSION_NUMBER="$(node ./get-marketplace-version.js)"
+UPDATED_VERSION_NUMBER="$(node ./scripts/get-marketplace-version.js)"
 
 if [ "$CURRENT_VERSION_NUMBER" == "$UPDATED_VERSION_NUMBER" ]; then
   print 'Not publishing the extension because there was no version increment'
