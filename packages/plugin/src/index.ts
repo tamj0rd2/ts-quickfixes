@@ -10,7 +10,7 @@ function init(modules: Modules): { create: CreateFn } {
 
   function create(info: ts.server.PluginCreateInfo): ts.LanguageService {
     const log = (message: string): void =>
-      info.project.projectService.logger.info(`@ts-quickfixes/plugin: ${message}`)
+      info.project.projectService.logger.info(`ts-quickfixes-plugin: ${message}`)
 
     log('Hello world!')
 

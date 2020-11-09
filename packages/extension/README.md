@@ -1,4 +1,4 @@
-# @ts-quickfixes/extension
+# ts-quickfixes-extension
 
 **NOTE:** This extension is in development and is NOT ready for use.
 

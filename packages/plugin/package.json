@@ -1,5 +1,5 @@
 {
-  "name": "@ts-quickfixes/plugin",
+  "name": "ts-quickfixes-plugin",
   "private": false,
   "version": "0.0.1",
   "description": "A typescript server plugin that adds some additional quickfixes to vscode",

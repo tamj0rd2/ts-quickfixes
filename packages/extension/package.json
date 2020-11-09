@@ -1,5 +1,5 @@
 {
-  "name": "@ts-quickfixes/extension",
+  "name": "ts-quickfixes-extension",
   "private": true,
   "displayName": "TS QuickFixes",
   "description": "Quick fixes for typescript",
@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/tamj0rd2/ts-quickfixes#readme",
   "dependencies": {
-    "@ts-quickfixes/plugin": "^0.0.1"
+    "ts-quickfixes-plugin": "^0.0.1"
   },
   "keywords": [],
   "author": ""
