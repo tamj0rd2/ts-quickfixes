@@ -4,6 +4,6 @@
     "allowJs": true,
     "composite": true
   },
-  "include": ["**/jest.config.js", "**/.eslintrc.js"],
+  "include": ["**/jest.config.js", "**/.eslintrc.js", "**/*.js"],
   "files": ["prettier.config.js"]
 }

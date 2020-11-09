@@ -63,16 +63,16 @@ module.exports = {
   },
   overrides: [
     {
+      files: ['**/*.js'],
+      rules: {
+        '@typescript-eslint/no-var-requires': 'off',
+      },
+    },
+    {
       files: ['**/*.test.ts', '**/*.spec.ts'],
       rules: {
         '@typescript-eslint/no-non-null-assertion': 'off',
         '@typescript-eslint/explicit-function-return-type': 'off',
-      },
-    },
-    {
-      files: ['**/*.test.ts'],
-      rules: {
-        'jest/expect-expect': 'off',
       },
     },
   ],
