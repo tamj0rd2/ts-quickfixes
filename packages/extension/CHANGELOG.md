@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.0.0-dev.4](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.0.0-dev.3...ts-quickfixes-extension-v1.0.0-dev.4) (2020-11-09)
+
+
+### Bug Fixes
+
+* third attempt to fix marketplace not publishing ([33392a8](https://github.com/tamj0rd2/ts-quickfixes/commit/33392a807dd6e618228f36ba5a8b2aef666cad80))
+
 # [ts-quickfixes-extension-v1.0.0-dev.3](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.0.0-dev.2...ts-quickfixes-extension-v1.0.0-dev.3) (2020-11-09)
 
 
