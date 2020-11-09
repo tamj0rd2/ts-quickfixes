@@ -7,7 +7,7 @@ const [matchedArea, major, minor, patch, preReleaseVersionNo] = packageJson.vers
 
 if (preReleaseVersionNo) {
   // this is really horrible but vsce just doesn't support semantic versioning
-  console.log(`${major}.${minor}.${patch + 1}000${preReleaseVersionNo}`)
+  console.log(`${major}.${minor}.${parseInt(patch) + 1}000${preReleaseVersionNo}`)
 } else {
   console.log(matchedArea)
 }
