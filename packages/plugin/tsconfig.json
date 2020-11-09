@@ -4,9 +4,8 @@
     "noEmit": false,
     "outDir": "./out",
     "rootDir": "./src",
-    "composite": true,
-    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"]
+    "composite": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "test-environment"]
+  "exclude": ["node_modules"]
 }

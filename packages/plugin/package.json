@@ -1,0 +1,12 @@
+{
+  "name": "@ts-quickfixes/plugin",
+  "version": "0.0.1",
+  "description": "A typescript server plugin that adds some additional quickfixes to vscode",
+  "main": "./out/src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "tamj0rd2",
+  "license": "ISC"
+}

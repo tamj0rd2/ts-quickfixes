@@ -1,4 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
-  "references": [{ "path": "./tsconfig.tools.json" }, { "path": "./packages/extension" }]
+  "references": [
+    { "path": "./tsconfig.tools.json" },
+    { "path": "./packages/extension" },
+    { "path": "./packages/plugin" }
+  ],
+  "exclude": ["**/node_modules/**"]
 }
