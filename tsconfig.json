@@ -1,26 +1,4 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es6",
-		"outDir": "out",
-    "lib": ["es2019"],
-		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "typeRoots": ["./node_modules/@types"],
-    "noImplicitAny": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "strictNullChecks": true,
-    "skipLibCheck": true
-  },
-  "include": ["src/**/*.ts"],
-	"exclude": [
-		"node_modules",
-    ".vscode-test",
-    "test-environment"
-	]
+  "extends": "./tsconfig.base.json",
+  "references": [{ "path": "./tsconfig.tools.json" }, { "path": "./apps/extension" }]
 }

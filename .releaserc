@@ -31,6 +31,7 @@
       "@semantic-release/git",
       {
         "assets": [
+          "README.md",
           "CHANGELOG.md",
           "package.json",
           "package-lock.json",

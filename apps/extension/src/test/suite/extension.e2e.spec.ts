@@ -43,7 +43,6 @@ describe('Acceptance tests', () => {
       const variableValue = getVariableValue(getAllDocumentText(), variableName)
 
       expect(variableValue).toStrictEqual(await readFixture('testing-aPerson'))
-      expect(variableValue).toBe(234897324)
     })
 
     // TODO: come back and fix this

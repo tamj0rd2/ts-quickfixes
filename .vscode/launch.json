@@ -3,51 +3,33 @@
 // Hover to view descriptions of existing attributes.
 // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
 {
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"name": "Run Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"args": [
-        "${workspaceFolder}/test-environment",
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "${workspaceFolder}/apps/extension/test-environment",
         "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceFolder}",
-			],
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			],
+        "--extensionDevelopmentPath=${workspaceFolder}/apps/extension"
+      ],
+      "outFiles": ["${workspaceFolder}/apps/extension/out/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
-      "internalConsoleOptions": "openOnSessionStart",
-		},
-		{
-			"name": "Extension Tests",
-			"type": "extensionHost",
-			"request": "launch",
-			"args": [
-        "${workspaceFolder}/test-environment",
-        "--disable-extensions",
-				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
-			],
-			"outFiles": [
-				"${workspaceFolder}/out/test/**/*.js"
-			],
-			"preLaunchTask": "${defaultBuildTask}"
+      "internalConsoleOptions": "openOnSessionStart"
     },
     {
-      "name": "TS testing",
-      "program": "${workspaceFolder}/src/test.ts",
+      "name": "Extension Tests",
+      "type": "extensionHost",
       "request": "launch",
-      "skipFiles": [
-        "<node_internals>/**"
+      "args": [
+        "${workspaceFolder}/apps/extension/test-environment",
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}/apps/extension",
+        "--extensionTestsPath=${workspaceFolder}/apps/extension/out/test/suite/index"
       ],
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js",
-        "!**/node_modules/**"
-      ],
-      "type": "pwa-node",
-      "console": "integratedTerminal"
+      "outFiles": ["${workspaceFolder}/apps/extension/out/test/**/*.js"],
+      "preLaunchTask": "${defaultBuildTask}"
     }
-	]
+  ]
 }
