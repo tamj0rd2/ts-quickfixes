@@ -10,11 +10,11 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/apps/extension/test-environment",
+        "${workspaceFolder}/packages/extension/test-environment",
         "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceFolder}/apps/extension"
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/extension"
       ],
-      "outFiles": ["${workspaceFolder}/apps/extension/out/**/*.js"],
+      "outFiles": ["${workspaceFolder}/packages/extension/out/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
       "internalConsoleOptions": "openOnSessionStart"
     },
@@ -23,12 +23,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/apps/extension/test-environment",
+        "${workspaceFolder}/packages/extension/test-environment",
         "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceFolder}/apps/extension",
-        "--extensionTestsPath=${workspaceFolder}/apps/extension/out/test/suite/index"
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/extension",
+        "--extensionTestsPath=${workspaceFolder}/packages/extension/out/test/suite/index"
       ],
-      "outFiles": ["${workspaceFolder}/apps/extension/out/test/**/*.js"],
+      "outFiles": ["${workspaceFolder}/packages/extension/out/test/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}"
     }
   ]
