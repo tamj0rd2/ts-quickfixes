@@ -9,7 +9,8 @@ import { TEST_ENV_FOLDER } from './test/test_constants'
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext): void {
-  console.log('Congratulations, your extension "ts-quickfixes" is now active!')
+  const outputChannel = vscode.window.createOutputChannel('ts-quickfixes')
+  outputChannel.appendLine('ts-quickfixes is now active')
 
   context.subscriptions.push(
     vscode.commands.registerTextEditorCommand('ts-quickfixes.implementAllMembers', () => {
