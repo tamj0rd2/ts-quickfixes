@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "ts-quickfixes-plugin": "^1.0.0-dev.1"
+  },
   "devDependencies": {
     "typescript": "^4.0.5"
   },
