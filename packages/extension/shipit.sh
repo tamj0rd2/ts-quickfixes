@@ -21,5 +21,5 @@ function finish {
 }
 trap finish EXIT
 
-npx semantic-release -d
+npx semantic-release
 npx vsce publish -p $PUBLISHER_TOKEN
