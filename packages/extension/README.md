@@ -1,5 +1,7 @@
 # @ts-quickfixes/extension
 
+**NOTE:** This extension is in development and is NOT ready for use.
+
 This extension will provide some quickfixes that are currently not offered by vscode
 
 ## Features

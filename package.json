@@ -27,7 +27,7 @@
     "lint": "npm run lint:base -- \"**/*.{ts,js}\" --ext .ts,.js",
     "lint:base": "eslint --color --ignore-path .gitignore --cache",
     "pretest": "npm run build",
-    "test": "npx lerna run --stream test:unit"
+    "test": "npx lerna run --stream test"
   },
   "husky": {
     "hooks": {
