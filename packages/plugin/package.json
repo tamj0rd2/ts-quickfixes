@@ -6,5 +6,9 @@
   "scripts": {},
   "keywords": [],
   "author": "tamj0rd2",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamj0rd2/ts-quickfixes.git"
+  }
 }
