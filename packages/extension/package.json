@@ -22,6 +22,7 @@
   ],
   "main": "./out/extension.js",
   "scripts": {
+    "shipit": "./shipit.sh",
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "lint": "npm run lint:base -- src --ext ts",

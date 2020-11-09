@@ -1,3 +1,3 @@
 # @ts-quickfixes/plugin
 
-WIP
+**NOTE:** This package is in development and is NOT ready for use.

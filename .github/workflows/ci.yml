@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NVMRC }}
       - name: Install dependencies
-        run: npm ci
+        run: npm ci && npx lerna bootstrap
       - name: Lint
         run: npm run lint
       - name: Run headless test
@@ -44,17 +44,10 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NVMRC }}
       - name: Install dependencies
-        run: npm ci
+        run: npm ci && npx lerna bootstrap
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: echo "::set-output name=release_output::$(npx semantic-release)"
-        id: release
-      - name: Publish extension
-        uses: JCofman/vscodeaction@master
-        if: ${{ !contains('There are no relevant changes', steps.hello.outputs.release_output) }}
-        env:
           PUBLISHER_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
-        with:
-          args: publish -p $PUBLISHER_TOKEN
+        run: npm run shipit
