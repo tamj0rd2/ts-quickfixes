@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.0.0-dev.2](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.0.0-dev.1...ts-quickfixes-extension-v1.0.0-dev.2) (2020-11-09)
+
+
+### Bug Fixes
+
+* **extension:** try to release a more specific version number ([1c70dfd](https://github.com/tamj0rd2/ts-quickfixes/commit/1c70dfd644b26fdb7654bee5415028b44c0a539e))
+
 # ts-quickfixes-extension-v1.0.0-dev.1 (2020-11-09)
 
 
