@@ -2,8 +2,12 @@ const { readFileSync } = require('fs')
 const { resolve } = require('path')
 
 const packageJson = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'))
-const versionRegex = /(\d+.\d+.\d+)(?:-.*\.(\d+))?/
-const [, versionNo, preReleaseVersionNo] = packageJson.version.match(versionRegex)
+const versionRegex = /(\d+).(\d+).(\d+)(?:-.*\.(\d+))?/
+const [matchedArea, major, minor, patch, preReleaseVersionNo] = packageJson.version.match(versionRegex)
 
-// the 000 thing is gross, but vsce just doesn't fully support semantic versioning
-console.log(preReleaseVersionNo ? `${versionNo}000${preReleaseVersionNo}` : versionNo)
+if (preReleaseVersionNo) {
+  // this is really horrible but vsce just doesn't support semantic versioning
+  console.log(`${major}.${minor}.${patch + 1}000${preReleaseVersionNo}`)
+} else {
+  console.log(matchedArea)
+}
