@@ -37,6 +37,7 @@ describe('Acceptance tests', () => {
       )
       if (!codeActions?.length) throw new Error('Expected to get some code actions back')
       expect(codeActions[0].title).toStrictEqual('Implement missing members')
+      expect(codeActions[1].title).toStrictEqual('Implement missing members') // from the plugin
 
       await vscode.workspace.applyEdit(codeActions[0].edit!)
 

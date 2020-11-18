@@ -3,7 +3,7 @@
   "private": false,
   "version": "1.0.0-dev.1",
   "description": "A typescript server plugin that adds some additional quickfixes to vscode",
-  "main": "./out/src/index.js",
+  "main": "./out/index.js",
   "scripts": {
     "shipit": "npx semantic-release"
   },

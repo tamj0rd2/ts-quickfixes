@@ -1,6 +1,6 @@
 import { readFile } from 'fs'
 import * as vscode from 'vscode'
-import { TEST_ENV_FOLDER } from '../test_constants'
+import { PACKAGE_ROOT_DIR } from '../test_constants'
 
 export function getAllDocumentText(document?: vscode.TextDocument): string {
   if (!document) document = vscode.window.activeTextEditor?.document
@@ -53,7 +53,7 @@ export function getVariableValue(textToSearch: string, variableName: string): st
 
 export function readFixture(fileName: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    readFile(`${TEST_ENV_FOLDER}/fixtures/${fileName}.txt`, (err, data) =>
+    readFile(`${PACKAGE_ROOT_DIR}/src/test/fixtures/${fileName}.txt`, (err, data) =>
       err ? reject(err) : resolve(data.toString()),
     )
   })

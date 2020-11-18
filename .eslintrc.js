@@ -7,9 +7,9 @@ module.exports = {
     project: [
       `${__dirname}/tsconfig.json`,
       `${__dirname}/tsconfig.tools.json`,
+      `${__dirname}/test-environment/tsconfig.json`,
       `${__dirname}/packages/plugin/tsconfig.json`,
       `${__dirname}/packages/extension/tsconfig.json`,
-      `${__dirname}/packages/extension/test-environment/tsconfig.json`,
     ],
     warnOnUnsupportedTypeScriptVersion: false,
   },

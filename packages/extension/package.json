@@ -21,6 +21,13 @@
     "onLanguage:typescriptreact"
   ],
   "main": "./out/extension.js",
+  "contributes": {
+    "typescriptServerPlugins": [
+      {
+        "name": "ts-quickfixes-plugin"
+      }
+    ]
+  },
   "scripts": {
     "shipit": "./scripts/shipit.sh",
     "vscode:prepublish": "npm run compile",

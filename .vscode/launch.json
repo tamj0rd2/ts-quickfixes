@@ -10,7 +10,7 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/packages/extension/test-environment",
+        "${workspaceFolder}/test-environment",
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}/packages/extension"
       ],
@@ -23,7 +23,7 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/packages/extension/test-environment",
+        "${workspaceFolder}/test-environment",
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}/packages/extension",
         "--extensionTestsPath=${workspaceFolder}/packages/extension/out/test/suite/index"

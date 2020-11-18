@@ -1,5 +1,4 @@
 import ts from 'typescript'
-import TsWrapper from './ts-wrapper'
 
 export const MemberType = {
   String: 'todo',
@@ -12,26 +11,26 @@ export type Member = typeof MemberType[keyof typeof MemberType] | Members
 export type Members = { [index: string]: Member }
 
 export class MemberParser {
-  private readonly program: ts.Program
-  private readonly sourceFiles: Map<FileName, ts.SourceFile>
+  private readonly sourceFile: ts.SourceFile
   private readonly typeChecker: ts.TypeChecker
+  private readonly program: ts.Program
 
-  constructor(options: ts.CompilerOptions, rootFiles: string[], tsWrapper: TsWrapper) {
-    this.program = tsWrapper.buildProgram(options, rootFiles)
+  constructor(filePath: string) {
+    this.program = ts.createProgram([filePath], {
+      noEmit: true,
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.Latest,
+    })
+
+    const sourceFile = this.program.getSourceFile(filePath)
+    if (!sourceFile) throw new Error(`expected to get a sourcefile for ${filePath}`)
+    this.sourceFile = sourceFile
+
     this.typeChecker = this.program.getTypeChecker()
-
-    this.sourceFiles = rootFiles.reduce((sourceFiles, filePath) => {
-      const sourceFile = this.program.getSourceFile(filePath)
-      if (!sourceFile) throw new Error(`No source file for ${filePath}`)
-      sourceFiles.set(filePath, sourceFile)
-
-      return sourceFiles
-    }, new Map<FileName, ts.SourceFile>())
   }
 
-  public getMissingMembersForVariable(variableName: string, filePath: string): Members {
-    const sourceFile = this.getSourceFile(filePath)
-    const { name, initializer } = this.getInitializedVariableDeclaration(variableName, sourceFile)
+  public getMissingMembersForVariable(variableName: string): Members {
+    const { name, initializer } = this.getInitializedVariableDeclaration(variableName)
 
     const declaredProperties = initializer.properties.reduce((properties, propertyNode) => {
       const propertyName = propertyNode.name?.getText()
@@ -48,12 +47,11 @@ export class MemberParser {
     return members
   }
 
-  public getVariableInfo(variableName: string, filePath: string): VariableInfo {
-    const sourceFile = this.getSourceFile(filePath)
-    const { initializer } = this.getInitializedVariableDeclaration(variableName, sourceFile)
+  public getVariableInfo(variableName: string): VariableInfo {
+    const { initializer } = this.getInitializedVariableDeclaration(variableName)
 
     const getPos = (pos: number): Position => {
-      const { line, character } = sourceFile.getLineAndCharacterOfPosition(pos)
+      const { line, character } = this.sourceFile.getLineAndCharacterOfPosition(pos)
       return { line: line, character: character + 1 }
     }
 
@@ -66,10 +64,9 @@ export class MemberParser {
 
   private getInitializedVariableDeclaration(
     variableName: string,
-    sourceFile: ts.SourceFile,
   ): { name: ts.BindingName; initializer: ts.ObjectLiteralExpression } {
     const { name, initializer } = this.findNode(
-      sourceFile,
+      this.sourceFile,
       (node): node is ts.VariableDeclaration => {
         if (!ts.isVariableDeclaration(node)) return false
         return node.name.getText() === variableName
@@ -105,11 +102,11 @@ export class MemberParser {
         const typeSymbol = type.getSymbol()
         if (!typeSymbol) throw new Error(`No type symbol found for ${name}`)
 
-        const isFromExternalDeclarationFile = typeSymbol
-          .getDeclarations()
-          ?.some((declaration) => declaration.getSourceFile().fileName.includes('node_modules'))
-
-        if (isFromExternalDeclarationFile) {
+        if (
+          typeSymbol
+            .getDeclarations()
+            ?.some((declaration) => this.program.isSourceFileDefaultLibrary(declaration.getSourceFile()))
+        ) {
           members[name] = MemberType.BuiltIn
           break
         }
@@ -146,12 +143,6 @@ export class MemberParser {
 
     throw new Error(failureMessage)
   }
-
-  private getSourceFile(filePath: string): ts.SourceFile {
-    const sourceFile = this.sourceFiles.get(filePath)
-    if (!sourceFile) throw new Error(`Could not find a source file for ${filePath}`)
-    return sourceFile
-  }
 }
 
 interface Position {
@@ -165,5 +156,3 @@ export interface VariableInfo {
   start: Position
   end: Position
 }
-
-type FileName = string

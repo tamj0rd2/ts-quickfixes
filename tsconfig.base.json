@@ -15,5 +15,6 @@
     "forceConsistentCasingInFileNames": true,
     "strictNullChecks": true
   },
-  "include": []
+  "include": [],
+  "exclude": ["**/node_modules", "**/out"]
 }

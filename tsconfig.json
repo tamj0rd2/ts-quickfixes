@@ -4,6 +4,5 @@
     { "path": "./tsconfig.tools.json" },
     { "path": "./packages/extension" },
     { "path": "./packages/plugin" }
-  ],
-  "exclude": ["**/node_modules/**", "**/out/**"]
+  ]
 }
