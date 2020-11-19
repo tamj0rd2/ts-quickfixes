@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.0.2](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.0.1...ts-quickfixes-plugin-v1.0.2) (2020-11-19)
+
+
+### Bug Fixes
+
+* iGNORE: just triggering CI ([6d1676d](https://github.com/tamj0rd2/ts-quickfixes/commit/6d1676d08fdf030f9328f3b2110d462349cc9ed6))
+
 # [ts-quickfixes-plugin-v1.0.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.0.0...ts-quickfixes-plugin-v1.0.1) (2020-11-19)
 
 
