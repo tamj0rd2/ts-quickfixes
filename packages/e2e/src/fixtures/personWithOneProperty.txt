@@ -1,0 +1,14 @@
+{
+  lastName: 'my last name',
+  firstName: 'todo',
+  birthday: null,
+  address: {
+    city: 'todo',
+    postcode: 'todo',
+  },
+  mobileNumber: {
+    countryCode: 'todo',
+    phoneNumber: 0,
+  },
+  status: null,
+}

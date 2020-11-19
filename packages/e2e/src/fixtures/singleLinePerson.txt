@@ -1,0 +1,14 @@
+{
+  birthday: new Date(),
+  status: 'Alive',
+  firstName: 'todo',
+  lastName: 'todo',
+  address: {
+    city: 'todo',
+    postcode: 'todo',
+  },
+  mobileNumber: {
+    countryCode: 'todo',
+    phoneNumber: 0,
+  },
+}

@@ -1,0 +1,51 @@
+{
+  "name": "ts-quickfixes-extension",
+  "private": true,
+  "displayName": "TS QuickFixes",
+  "description": "Quick fixes for typescript",
+  "version": "1.0.0-dev.5",
+  "license": "MIT",
+  "publisher": "tamj0rd2",
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamj0rd2/ts-quickfixes.git"
+  },
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "typescriptServerPlugins": [
+      {
+        "name": "ts-quickfixes-plugin",
+        "enableForWorkspaceTypeScriptVersions": true
+      }
+    ]
+  },
+  "scripts": {
+    "shipit": "./scripts/shipit.sh",
+    "vscode:prepublish": "tsc -b ./tsconfig.json",
+    "test": "echo WARNING: there are no tests in the extension package yet"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/tamj0rd2/ts-quickfixes/issues"
+  },
+  "homepage": "https://github.com/tamj0rd2/ts-quickfixes#readme",
+  "dependencies": {
+    "ts-quickfixes-plugin": "^1.0.0-dev.1"
+  },
+  "keywords": [],
+  "author": "tamj0rd2"
+}

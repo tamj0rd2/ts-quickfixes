@@ -1,0 +1,18 @@
+{
+  "name": "ts-quickfixes-plugin",
+  "private": false,
+  "version": "1.0.0-dev.1",
+  "description": "A typescript server plugin that adds some additional quickfixes to vscode",
+  "main": "./out/index.js",
+  "scripts": {
+    "test": "jest",
+    "shipit": "npx semantic-release"
+  },
+  "keywords": [],
+  "author": "tamj0rd2",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamj0rd2/ts-quickfixes.git"
+  }
+}

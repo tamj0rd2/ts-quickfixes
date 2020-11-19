@@ -1,22 +1,20 @@
-# TS QuickFixes
-
-This extension will provide some quickfixes that are currently not offered by vscode
+# TS Quickfixes
 
 ## Features
 
-<!-- Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### Implement missing object members
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\) -->
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![Implement missing object members](gifs/implement-missing-members.gif)
 
 ## Requirements
+
+N/A
 
 <!-- If you have any requirements or dependencies, add a section describing those and how to install and configure them. -->
 
 ## Extension Settings
+
+N/A
 
 <!-- Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
 
@@ -29,20 +27,15 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-<!-- Calling out known issues can help limit users opening duplicate issues against your extension. -->
+I've only covered a few use cases/scenarios. if your use case is not covered,
+please open a github issue.
 
 ## Release Notes
 
-<!-- Users appreciate release notes as you update your extension.
+See the extension changelog [here](https://github.com/tamj0rd2/ts-quickfixes/blob/master/packages/extension/CHANGELOG.md)
 
-### 1.0.0
+See the plugin changelog [here](https://github.com/tamj0rd2/ts-quickfixes/blob/master/packages/plugin/CHANGELOG.md)
 
-Initial release of ...
+## Contributing
 
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z. -->
+See [CONTRIBUTING.md](https://github.com/tamj0rd2/ts-quickfixes/blob/master/packages/plugin/CONTRIBUTING.md)

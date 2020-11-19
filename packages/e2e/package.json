@@ -1,0 +1,17 @@
+{
+  "name": "ts-quickfixes-e2e",
+  "private": true,
+  "version": "0.0.1",
+  "description": "E2E tests for the extension/plugin",
+  "main": "./out/run-tests.js",
+  "scripts": {
+    "test": "node ./out/run-tests.js"
+  },
+  "keywords": [],
+  "author": "tamj0rd2",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamj0rd2/ts-quickfixes.git"
+  }
+}
