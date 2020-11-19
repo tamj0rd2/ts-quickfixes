@@ -31,15 +31,8 @@
   },
   "scripts": {
     "shipit": "./scripts/shipit.sh",
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "lint": "npm run lint:base -- src --ext ts",
-    "lint:base": "eslint --color --ignore-path ../../.gitignore --cache",
-    "watch": "tsc -p ./tsconfig.json --watch",
-    "pretest": "npm run compile",
-    "test": "run-s test:unit test:e2e",
-    "test:unit": "cross-env TEST_MODE=unit jest",
-    "test:e2e": "cross-env TEST_MODE=e2e node ./out/test/runTest.js"
+    "vscode:prepublish": "tsc -b ./tsconfig.json",
+    "test": "echo WARNING: there are no tests in the extension package yet"
   },
   "config": {
     "commitizen": {
@@ -54,5 +47,5 @@
     "ts-quickfixes-plugin": "^1.0.0-dev.1"
   },
   "keywords": [],
-  "author": ""
+  "author": "tamj0rd2"
 }

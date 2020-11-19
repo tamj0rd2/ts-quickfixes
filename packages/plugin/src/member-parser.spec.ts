@@ -3,7 +3,6 @@ import ts from 'typescript/lib/tsserverlibrary'
 import { MemberParser, MemberType, VariableInfo } from './member-parser'
 
 describe('MemberParser', () => {
-  // TODO: get rid of this grossness!
   describe('getMissingMembersForVariable', () => {
     it('returns the correct members when there are none specified', () => {
       const { program, testFilePath } = createTestDeps()

@@ -10,6 +10,8 @@ module.exports = {
       `${__dirname}/test-environment/tsconfig.json`,
       `${__dirname}/packages/plugin/tsconfig.json`,
       `${__dirname}/packages/extension/tsconfig.json`,
+      `${__dirname}/packages/extension/tsconfig.tools.json`,
+      `${__dirname}/packages/e2e/tsconfig.json`,
     ],
     warnOnUnsupportedTypeScriptVersion: false,
   },

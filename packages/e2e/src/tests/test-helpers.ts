@@ -1,6 +1,6 @@
 import { readFile } from 'fs'
 import * as vscode from 'vscode'
-import { PACKAGE_ROOT_DIR } from '../test_constants'
+import { E2E_ROOT_DIR } from '../paths'
 
 export function getAllDocumentText(document?: vscode.TextDocument): string {
   if (!document) document = vscode.window.activeTextEditor?.document
@@ -66,7 +66,7 @@ export function getVariableValue(textToSearch: string, variableName: string): st
 
 export function readFixture(fileName: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    readFile(`${PACKAGE_ROOT_DIR}/src/test/fixtures/${fileName}.txt`, (err, data) =>
+    readFile(`${E2E_ROOT_DIR}/src/fixtures/${fileName}.txt`, (err, data) =>
       err ? reject(err) : resolve(data.toString()),
     )
   })

@@ -28,3 +28,9 @@ Check out the [README](./packages/plugin/README.md)
 
 NOTE: The extension tests can take a little while to run. At most you'll have to wait
 a minute. If it takes longer than that, something is probably wrong.
+
+## How to add a new package to the monorepo
+
+1. Copy paste packages/example-package and give it a new name
+2. Open this repo's root tsconfig file and add a project reference to your new package
+3. Open this repo's root .eslintrc.js and add the package's tsconfig path to the `projects` array

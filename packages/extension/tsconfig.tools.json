@@ -1,0 +1,4 @@
+{
+  "extends": "../../tsconfig.tools.json",
+  "files": ["./scripts/get-marketplace-version.js"]
+}

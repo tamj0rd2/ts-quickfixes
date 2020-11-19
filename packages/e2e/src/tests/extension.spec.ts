@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { TEST_ENV_FOLDER } from '../test_constants'
+import { TEST_ENV_DIR } from '../paths'
 import {
   getAllDocumentText,
   getLineByText,
@@ -9,7 +9,9 @@ import {
 } from './test-helpers'
 
 describe('Acceptance tests', () => {
-  beforeAll(() => vscode.window.showInformationMessage('Starting acceptance tests'))
+  beforeAll(() => {
+    void vscode.window.showInformationMessage('Starting acceptance tests')
+  })
 
   describe('Implement missing memebers', () => {
     const happyPathCases = [
@@ -56,7 +58,7 @@ function createTestDeps() {
   }
 
   return {
-    testFileUri: vscode.Uri.file(TEST_ENV_FOLDER + '/testing.ts'),
+    testFileUri: vscode.Uri.file(TEST_ENV_DIR + '/testing.ts'),
     getCodeActionsForVariable,
   }
 }

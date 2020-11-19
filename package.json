@@ -1,26 +1,9 @@
 {
   "name": "ts-quickfixes",
   "private": true,
-  "displayName": "TS QuickFixes",
   "description": "Quick fixes for typescript",
   "version": "1.0.0",
   "license": "MIT",
-  "publisher": "tamj0rd2",
-  "engines": {
-    "vscode": "^1.50.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tamj0rd2/ts-quickfixes.git"
-  },
-  "activationEvents": [
-    "onLanguage:typescript",
-    "onLanguage:typescriptreact"
-  ],
-  "main": "./out/extension.js",
   "scripts": {
     "build": "tsc -b ./tsconfig.json",
     "watch": "tsc -b ./tsconfig.json --watch",
@@ -81,8 +64,12 @@
   "bugs": {
     "url": "https://github.com/tamj0rd2/ts-quickfixes/issues"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamj0rd2/ts-quickfixes.git"
+  },
   "homepage": "https://github.com/tamj0rd2/ts-quickfixes#readme",
   "dependencies": {},
   "keywords": [],
-  "author": ""
+  "author": "tamj0rd2"
 }

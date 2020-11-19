@@ -2,7 +2,8 @@
   "extends": "./tsconfig.base.json",
   "references": [
     { "path": "./tsconfig.tools.json" },
-    { "path": "./packages/extension" },
-    { "path": "./packages/plugin" }
+    { "path": "./packages/extension/tsconfig.json" },
+    { "path": "./packages/plugin/tsconfig.json" },
+    { "path": "./packages/e2e/tsconfig.json" }
   ]
 }

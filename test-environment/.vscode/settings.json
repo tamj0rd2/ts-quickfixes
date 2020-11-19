@@ -1,3 +1,4 @@
 {
-  "typescript.tsserver.trace": "messages"
+  "typescript.tsserver.trace": "messages",
+  "telemetry.enableTelemetry": false
 }
