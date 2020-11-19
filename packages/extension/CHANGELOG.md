@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.1.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.0.0...ts-quickfixes-extension-v1.1.0) (2020-11-19)
+
+
+### Features
+
+* **extension:** bump the version of ts-quickfixes-plugin in use ([d181617](https://github.com/tamj0rd2/ts-quickfixes/commit/d181617c3a21d730e284ad20fda7107bfe4932c5))
+
 # ts-quickfixes-extension-v1.0.0 (2020-11-19)
 
 
