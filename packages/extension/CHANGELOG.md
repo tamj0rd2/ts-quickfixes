@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.1.2](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.1.1...ts-quickfixes-extension-v1.1.2) (2020-11-19)
+
+
+### Bug Fixes
+
+* build assets before releasing ([8dd9c6b](https://github.com/tamj0rd2/ts-quickfixes/commit/8dd9c6b0f635fce3c39b5754c6f87406e2e2adef))
+
 # [ts-quickfixes-extension-v1.1.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.1.0...ts-quickfixes-extension-v1.1.1) (2020-11-19)
 
 
