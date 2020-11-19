@@ -21,9 +21,6 @@ function finish {
 }
 trap finish EXIT
 
-tsc -b ./tsconfig.json
-print 'Built code'
-
 semantic-release
 print 'Semantic release complete'
 
