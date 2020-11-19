@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.1.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.1.0...ts-quickfixes-extension-v1.1.1) (2020-11-19)
+
+
+### Bug Fixes
+
+* **plugin:** include out files in release assets ([a9a586f](https://github.com/tamj0rd2/ts-quickfixes/commit/a9a586f0ad45d84aba56ba1291848d330ce0753d))
+
 # [ts-quickfixes-extension-v1.1.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.0.0...ts-quickfixes-extension-v1.1.0) (2020-11-19)
 
 
