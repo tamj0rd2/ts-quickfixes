@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "description": "A typescript server plugin that adds some additional quickfixes to vscode",
   "main": "./out/index.js",
+  "files": [
+    "out"
+  ],
   "scripts": {
     "test": "jest",
     "shipit": "npx semantic-release"

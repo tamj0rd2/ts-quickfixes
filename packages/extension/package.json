@@ -31,7 +31,6 @@
   },
   "scripts": {
     "shipit": "./scripts/shipit.sh",
-    "vscode:prepublish": "tsc -b ./tsconfig.json",
     "test": "echo WARNING: there are no tests in the extension package yet"
   },
   "config": {
