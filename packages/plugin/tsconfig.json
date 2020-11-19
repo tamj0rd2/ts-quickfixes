@@ -4,8 +4,7 @@
     "noEmit": false,
     "outDir": "./out",
     "rootDir": "./src",
-    "composite": true,
-    "plugins": [{ "name": "ts-quickfixes-plugin" }]
+    "composite": true
   },
   "include": ["src/**/*.ts"]
 }

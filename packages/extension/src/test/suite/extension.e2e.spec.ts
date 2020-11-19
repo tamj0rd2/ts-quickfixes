@@ -1,98 +1,62 @@
 import * as vscode from 'vscode'
-import { TS_MISSING_PROPERTIES } from '../../code-action-provider'
 import { TEST_ENV_FOLDER } from '../test_constants'
-import { getAllDocumentText, getLineByText, getVariableValue, readFixture, waitUntil } from './test-helpers'
+import {
+  getAllDocumentText,
+  getLineByText,
+  getVariableValue,
+  readFixture,
+  waitForResponse,
+} from './test-helpers'
 
 describe('Acceptance tests', () => {
-  void vscode.window.showInformationMessage('Starting acceptance tests')
-  const waitForTsDiagnostics = () =>
-    waitUntil(() =>
-      vscode.languages
-        .getDiagnostics()
-        .some(([, diagnostics]) =>
-          diagnostics.some((diagnostic) => diagnostic.source === TS_MISSING_PROPERTIES.source),
-        ),
-    )
+  beforeAll(() => vscode.window.showInformationMessage('Starting acceptance tests'))
 
-  describe('Implement all memebers', () => {
-    it('implements members when all of them were missing', async () => {
-      const testingTsUri = vscode.Uri.file(TEST_ENV_FOLDER + '/testing.ts')
-      const document = await vscode.workspace.openTextDocument(testingTsUri)
-      const textEditor = await vscode.window.showTextDocument(document)
-      await waitForTsDiagnostics()
+  describe('Implement missing memebers', () => {
+    const happyPathCases = [
+      ['implements all object members when all of them were missing', 'aPerson'],
+      ['only implements missing members if some members are already defined', 'personWithOneProperty'],
+      ['implements missing members for objects that have been defined on a single line', 'singleLinePerson'],
+    ]
 
-      const variableName = 'aPerson'
-      const variableLine = getLineByText(document, `const ${variableName}`)
-      const lineNumber = variableLine.range.start.line
-      const charNumber = variableLine.text.indexOf(variableName)
-      textEditor.selection = new vscode.Selection(lineNumber, charNumber, lineNumber, charNumber)
+    it.each(happyPathCases)('%s', async (_, variableName) => {
+      const { testFileUri, getCodeActionsForVariable } = createTestDeps()
+      const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
+      await vscode.window.showTextDocument(testingDocument)
 
-      const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
-        'vscode.executeCodeActionProvider',
-        document.uri,
-        new vscode.Range(
-          variableLine.range.start.translate(0, charNumber),
-          variableLine.range.start.translate(0, charNumber + variableName.length),
-        ),
-      )
-      if (!codeActions?.length) throw new Error('Expected to get some code actions back')
+      const codeActions = await getCodeActionsForVariable(testingDocument, variableName)
       expect(codeActions[0].title).toStrictEqual('Implement missing members')
-      expect(codeActions[1].title).toStrictEqual('Implement missing members') // from the plugin
-
       await vscode.workspace.applyEdit(codeActions[0].edit!)
 
-      const variableValue = getVariableValue(getAllDocumentText(), variableName)
-
-      expect(variableValue).toStrictEqual(await readFixture('testing-aPerson'))
-    })
-
-    // TODO: come back and fix this
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('implements members when they are only partially missing', async () => {
-      const testingTsUri = vscode.Uri.file(TEST_ENV_FOLDER + '/testing.ts')
-      const document = await vscode.workspace.openTextDocument(testingTsUri)
-      const textEditor = await vscode.window.showTextDocument(document)
-      await waitForTsDiagnostics()
-
-      const variableName = 'personWithOneProperty'
-      const variableLine = getLineByText(document, `const ${variableName}`)
-      const lineNumber = variableLine.range.start.line
-      const charNumber = variableLine.text.indexOf(variableName)
-      textEditor.selection = new vscode.Selection(lineNumber, charNumber, lineNumber, charNumber)
-
-      const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
-        'vscode.executeCodeActionProvider',
-        document.uri,
-        new vscode.Range(
-          variableLine.range.start.translate(0, charNumber),
-          variableLine.range.start.translate(0, charNumber + variableName.length),
-        ),
-      )
-      if (!codeActions?.length) throw new Error('Expected to get some code actions back')
-      expect(codeActions[0].title).toStrictEqual('Implement missing members')
-
-      await vscode.workspace.applyEdit(codeActions[0].edit!)
-
-      const variableValue = getVariableValue(getAllDocumentText(), variableName)
-      expect(variableValue).toStrictEqual(
-        [
-          '{',
-          `  lastName: 'my last name',`,
-          // TODO: implement the quickfix replacement
-          // `  "firstName": "todo",`,
-          // `  "birthday": null,`,
-          // `  "address": {`,
-          // `    "city": "todo",`,
-          // `    "postcode": "todo"`,
-          // `  },`,
-          // `  "mobileNumber": {`,
-          // `    "countryCode": "todo",`,
-          // `    "phoneNumber": 0`,
-          // `  },`,
-          // `  "status": null`,
-          `}`,
-        ].join('\n'),
-      )
+      const variableValue = getVariableValue(getAllDocumentText(testingDocument), variableName)
+      expect(variableValue).toStrictEqual(await readFixture(variableName))
     })
   })
 })
+
+function createTestDeps() {
+  const getCodeActionsForVariable = (
+    document: vscode.TextDocument,
+    variableName: string,
+  ): Promise<vscode.CodeAction[]> => {
+    const variableLine = getLineByText(document, `const ${variableName}`)
+    const charNumber = variableLine.text.indexOf(variableName)
+
+    return waitForResponse(
+      async () =>
+        await vscode.commands.executeCommand<vscode.CodeAction[]>(
+          'vscode.executeCodeActionProvider',
+          document.uri,
+          new vscode.Range(
+            variableLine.range.start.translate(0, charNumber),
+            variableLine.range.start.translate(0, charNumber + variableName.length),
+          ),
+        ),
+      (response) => !!response?.length,
+    )
+  }
+
+  return {
+    testFileUri: vscode.Uri.file(TEST_ENV_FOLDER + '/testing.ts'),
+    getCodeActionsForVariable,
+  }
+}

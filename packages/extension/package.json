@@ -24,7 +24,8 @@
   "contributes": {
     "typescriptServerPlugins": [
       {
-        "name": "ts-quickfixes-plugin"
+        "name": "ts-quickfixes-plugin",
+        "enableForWorkspaceTypeScriptVersions": true
       }
     ]
   },

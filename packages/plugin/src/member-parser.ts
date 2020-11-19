@@ -11,26 +11,17 @@ export type Member = typeof MemberType[keyof typeof MemberType] | Members
 export type Members = { [index: string]: Member }
 
 export class MemberParser {
-  private readonly sourceFile: ts.SourceFile
   private readonly typeChecker: ts.TypeChecker
   private readonly program: ts.Program
 
-  constructor(filePath: string) {
-    this.program = ts.createProgram([filePath], {
-      noEmit: true,
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.Latest,
-    })
-
-    const sourceFile = this.program.getSourceFile(filePath)
-    if (!sourceFile) throw new Error(`expected to get a sourcefile for ${filePath}`)
-    this.sourceFile = sourceFile
-
+  constructor(program: ts.Program) {
+    this.program = program
     this.typeChecker = this.program.getTypeChecker()
   }
 
-  public getMissingMembersForVariable(variableName: string): Members {
-    const { name, initializer } = this.getInitializedVariableDeclaration(variableName)
+  public getMissingMembersForVariable(variableName: string, filePath: string): Members {
+    const sourceFile = this.getSourceFile(filePath)
+    const { name, initializer } = this.getInitializedVariableDeclaration(variableName, sourceFile)
 
     const declaredProperties = initializer.properties.reduce((properties, propertyNode) => {
       const propertyName = propertyNode.name?.getText()
@@ -47,12 +38,13 @@ export class MemberParser {
     return members
   }
 
-  public getVariableInfo(variableName: string): VariableInfo {
-    const { initializer } = this.getInitializedVariableDeclaration(variableName)
+  public getVariableInfo(variableName: string, filePath: string): VariableInfo {
+    const sourceFile = this.getSourceFile(filePath)
+    const { initializer } = this.getInitializedVariableDeclaration(variableName, sourceFile)
 
     const getPos = (pos: number): Position => {
-      const { line, character } = this.sourceFile.getLineAndCharacterOfPosition(pos)
-      return { line: line, character: character + 1 }
+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(pos)
+      return { line: line, character: character + 1, pos }
     }
 
     return {
@@ -62,11 +54,17 @@ export class MemberParser {
     }
   }
 
+  public getVariableNameAtLocation(start: number, end: number, filePath: string): string {
+    const sourceFile = this.getSourceFile(filePath)
+    return sourceFile.getFullText().slice(start, end)
+  }
+
   private getInitializedVariableDeclaration(
     variableName: string,
+    sourceFile: ts.SourceFile,
   ): { name: ts.BindingName; initializer: ts.ObjectLiteralExpression } {
     const { name, initializer } = this.findNode(
-      this.sourceFile,
+      sourceFile,
       (node): node is ts.VariableDeclaration => {
         if (!ts.isVariableDeclaration(node)) return false
         return node.name.getText() === variableName
@@ -143,12 +141,20 @@ export class MemberParser {
 
     throw new Error(failureMessage)
   }
+
+  private getSourceFile(filePath: string): ts.SourceFile {
+    const sourceFile = this.program.getSourceFile(filePath)
+    if (sourceFile) return sourceFile
+
+    throw new Error(`expected to get a sourcefile for ${filePath}`)
+  }
 }
 
 interface Position {
   /** lines are 0 indexed */
   line: number
   character: number
+  pos: number
 }
 
 export interface VariableInfo {

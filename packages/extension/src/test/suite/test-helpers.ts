@@ -24,9 +24,22 @@ export function getLineByText(document: vscode.TextDocument, target: string): vs
 export async function waitUntil(predicate: () => boolean | Promise<boolean>, timeout = 15): Promise<void> {
   for (let attempt = 0; attempt < timeout; attempt++) {
     if (await predicate()) return
-    await sleep(1)
+    await wait(1)
   }
   throw new Error('waitUntil timeout exceeded')
+}
+
+export async function waitForResponse<T, Res extends T>(
+  getResponse: () => T | Promise<T>,
+  predicate: (response: T) => boolean,
+  timeout = 5,
+): Promise<Res> {
+  for (let attempt = 0; attempt < timeout; attempt++) {
+    const response = await getResponse()
+    if (predicate(response)) return response as Res
+    await wait(1)
+  }
+  throw new Error('tryGetResponse timeout exceeded')
 }
 
 export function getVariableValue(textToSearch: string, variableName: string): string {
@@ -59,7 +72,7 @@ export function readFixture(fileName: string): Promise<string> {
   })
 }
 
-function sleep(seconds: number): Promise<void> {
+export function wait(seconds: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, seconds * 1000)
   })

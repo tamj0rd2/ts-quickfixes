@@ -18,4 +18,4 @@ export const personWithOneProperty: Person = {
   lastName: 'my last name',
 }
 
-export const inlinePersonWithTwoProperties: Person = { birthday: new Date(), status: 'Alive' }
+export const singleLinePerson: Person = { birthday: new Date(), status: 'Alive' }
