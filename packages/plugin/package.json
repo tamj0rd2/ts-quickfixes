@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "shipit": "npx semantic-release"
+    "shipit": "semantic-release"
   },
   "keywords": [],
   "author": "tamj0rd2",
