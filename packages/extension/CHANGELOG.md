@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.2.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.1.2...ts-quickfixes-extension-v1.2.0) (2020-11-19)
+
+
+### Features
+
+* **extension:** install latest plugin version ([349a170](https://github.com/tamj0rd2/ts-quickfixes/commit/349a170134d3cf580c1455b9b3cbe9efa52fb1a2))
+
 # [ts-quickfixes-extension-v1.1.2](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.1.1...ts-quickfixes-extension-v1.1.2) (2020-11-19)
 
 
