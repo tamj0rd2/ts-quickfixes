@@ -19,3 +19,9 @@ export const personWithOneProperty: Person = {
 }
 
 export const singleLinePerson: Person = { birthday: new Date(), status: 'Alive' }
+
+interface Employee extends Person {
+  department: string
+}
+
+export const employee: Employee = {}

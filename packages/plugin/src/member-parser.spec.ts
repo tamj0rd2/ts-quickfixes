@@ -1,12 +1,16 @@
 import { resolve } from 'path'
 import ts from 'typescript/lib/tsserverlibrary'
 import { MemberParser, MemberType, VariableInfo } from './member-parser'
+import mockFs from 'mock-fs'
 
 describe('MemberParser', () => {
+  afterEach(() => mockFs.restore())
+
   describe('getMissingMembersForVariable', () => {
     it('returns the correct members when there are none specified', () => {
-      const { program, testFilePath } = createTestDeps()
-      const memberParser = new MemberParser(program)
+      const { createProgram, getFilePath } = createTestDeps()
+      const testFilePath = getFilePath('testing')
+      const memberParser = new MemberParser(createProgram(testFilePath))
 
       const members = memberParser.getMissingMembersForVariable('aPerson', testFilePath)
 
@@ -21,8 +25,9 @@ describe('MemberParser', () => {
     })
 
     it('returns the correct members when there is already one specified', () => {
-      const { program, testFilePath } = createTestDeps()
-      const memberParser = new MemberParser(program)
+      const { createProgram, getFilePath } = createTestDeps()
+      const testFilePath = getFilePath('testing')
+      const memberParser = new MemberParser(createProgram(testFilePath))
 
       const members = memberParser.getMissingMembersForVariable('personWithOneProperty', testFilePath)
 
@@ -34,12 +39,44 @@ describe('MemberParser', () => {
         status: MemberType.Union,
       })
     })
+
+    describe('when the interface extends another interface', () => {
+      it('gets the correct members when they are declared in the same file', () => {
+        const { createProgram } = createTestDeps()
+        const filePath = 'file.ts'
+        mockFs({
+          [filePath]: `
+          interface Animal {
+            age: number
+            hasLegs: boolean
+          }
+
+          interface Dog extends Animal {
+            breed: string
+          }
+          
+          export const dog: Dog = {}`,
+        })
+
+        const memberParser = new MemberParser(createProgram(filePath))
+        const members = memberParser.getMissingMembersForVariable('dog', filePath)
+
+        expect(members).toStrictEqual<typeof members>({
+          age: MemberType.Number,
+          breed: MemberType.String,
+          hasLegs: MemberType.Boolean,
+        })
+      })
+
+      it.todo('gets the correct members when they are declared in different files')
+    })
   })
 
   describe('getVariableInfo', () => {
     it(`returns the variable's value when there are no members`, () => {
-      const { program, testFilePath } = createTestDeps()
-      const memberParser = new MemberParser(program)
+      const { createProgram, getFilePath } = createTestDeps()
+      const testFilePath = getFilePath('testing')
+      const memberParser = new MemberParser(createProgram(testFilePath))
 
       const info = memberParser.getVariableInfo('aPerson', testFilePath)
 
@@ -51,8 +88,9 @@ describe('MemberParser', () => {
     })
 
     it(`returns the variable's value when there are some members`, () => {
-      const { program, testFilePath } = createTestDeps()
-      const memberParser = new MemberParser(program)
+      const { createProgram, getFilePath } = createTestDeps()
+      const testFilePath = getFilePath('testing')
+      const memberParser = new MemberParser(createProgram(testFilePath))
 
       const info = memberParser.getVariableInfo('personWithOneProperty', testFilePath)
 
@@ -64,8 +102,9 @@ describe('MemberParser', () => {
     })
 
     it(`returns the variable's text when it is a single line declaration`, () => {
-      const { program, testFilePath } = createTestDeps()
-      const memberParser = new MemberParser(program)
+      const { createProgram, getFilePath } = createTestDeps()
+      const testFilePath = getFilePath('testing')
+      const memberParser = new MemberParser(createProgram(testFilePath))
 
       const info = memberParser.getVariableInfo('singleLinePerson', testFilePath)
 
@@ -79,7 +118,10 @@ describe('MemberParser', () => {
 
   describe('getVariableNameAtLocation', () => {
     it('can get a variable name at a certain location', () => {
-      const { program, testFilePath } = createTestDeps()
+      const { createProgram, getFilePath } = createTestDeps()
+      const testFilePath = getFilePath('testing')
+      const program = createProgram(testFilePath)
+
       const expectedVariableName = 'singleLinePerson'
       const start = 376
       const end = start + expectedVariableName.length
@@ -92,15 +134,15 @@ describe('MemberParser', () => {
 })
 
 function createTestDeps() {
-  const testFilePath = resolve(process.cwd(), `../../test-environment/testing.ts`)
-  const program = ts.createProgram([testFilePath], {
-    noEmit: true,
-    module: ts.ModuleKind.CommonJS,
-    target: ts.ScriptTarget.Latest,
-  })
-
+  const fixtureFolder = resolve(process.cwd(), `../../test-environment`)
   return {
-    testFilePath,
-    program,
+    createProgram: (...fileNames: [string, ...string[]]) =>
+      ts.createProgram(fileNames, {
+        noEmit: true,
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.Latest,
+      }),
+    getFilePath: (fileName: string) => `${fixtureFolder}/${fileName}.ts`,
+    makeFileContent: (...lines: string[]) => lines.join('\n'),
   }
 }

@@ -29,3 +29,16 @@ It seems to get confused about where to find project files unless I do this.
 1. Copy paste packages/example-package and give it a new name
 2. Open this repo's root tsconfig file and add a project reference to your new package
 3. Open this repo's root .eslintrc.js and add the package's tsconfig path to the `projects` array
+
+## Monitoring the ts-server logs
+
+In vscode, you can see some communications with the ts-server by looking at the Typescript output channel.
+
+Here's a nice little script you can use to monitor the typescript server logs:
+
+```bash
+export TSS_LOG="-logToFile true -file <someFolderPath>/ts-logs.txt -level verbose"
+tail -f ../ts-logs.txt | grep --line-buffered --color=always ts-quickfixes-plugin
+```
+
+If you're able to see `Hello world!` in the output, the monitoring is working

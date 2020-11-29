@@ -28,6 +28,7 @@ describe('Formatter', () => {
             `    phoneNumber: 0,`,
             `  },`,
             `  status: null,`,
+            `  isEmployed: false,`,
             `}`,
           ].join(lineEnding),
         )
@@ -59,6 +60,7 @@ describe('Formatter', () => {
             `    phoneNumber: 0,`,
             `  },`,
             `  status: null,`,
+            `  isEmployed: false,`,
             `}`,
           ].join(lineEnding),
         )
@@ -82,6 +84,7 @@ function createTestDeps() {
         phoneNumber: MemberType.Number,
       },
       status: MemberType.Union,
+      isEmployed: MemberType.Boolean,
     }),
   }
 }

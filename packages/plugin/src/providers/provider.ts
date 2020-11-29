@@ -6,10 +6,7 @@ export abstract class BaseProvider {
 
   protected getProgram(): ts.Program {
     const program = this.originalLanguageService.getProgram()
-    if (program) {
-      this.logger.info('Created a program')
-      return program
-    }
+    if (program) return program
 
     const error = new Error('No program :(')
     this.logger.error(error)

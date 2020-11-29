@@ -1,6 +1,6 @@
 import { LineEnding, MemberFormatter } from '../formatter'
 import { MemberParser } from '../member-parser'
-import { BaseProvider } from '../provider'
+import { BaseProvider } from './provider'
 
 export class CodeFixProvider extends BaseProvider {
   public getCodeFixesAtPosition = (
@@ -11,10 +11,14 @@ export class CodeFixProvider extends BaseProvider {
     formatOptions: ts.FormatCodeSettings,
     preferences: ts.UserPreferences,
   ): readonly ts.CodeFixAction[] => {
+    this.logger.info('Trying to get code fix actions')
     const codeFixArgs: CodeFixArgs = { fileName, start, end, errorCodes, formatOptions, preferences }
     const customActions: ts.CodeFixAction[] = []
+
     if (errorCodes.some((code) => ERROR_CODES.implementMissingMembers.includes(code))) {
       customActions.push(this.createImplementMissingMembersFix(codeFixArgs))
+    } else {
+      this.logger.info('no fixable error codes')
     }
 
     return [
@@ -35,7 +39,6 @@ export class CodeFixProvider extends BaseProvider {
     const memberParser = new MemberParser(program)
     const variableName = memberParser.getVariableNameAtLocation(start, end, fileName)
     const members = memberParser.getMissingMembersForVariable(variableName, fileName)
-
     const variableInfo = memberParser.getVariableInfo(variableName, fileName)
     const replacedVariable = new MemberFormatter().format(variableInfo.lines, members, LineEnding.LF)
 
@@ -61,7 +64,7 @@ export class CodeFixProvider extends BaseProvider {
 }
 
 const ERROR_CODES = {
-  implementMissingMembers: [2739, 2740],
+  implementMissingMembers: [2739, 2740, 2741],
 }
 
 interface CodeFixArgs {

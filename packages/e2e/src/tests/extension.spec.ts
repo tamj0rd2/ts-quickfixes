@@ -13,11 +13,12 @@ describe('Acceptance tests', () => {
     void vscode.window.showInformationMessage('Starting acceptance tests')
   })
 
-  describe('Implement missing memebers', () => {
+  describe('Implement missing members', () => {
     const happyPathCases = [
       ['implements all object members when all of them were missing', 'aPerson'],
       ['only implements missing members if some members are already defined', 'personWithOneProperty'],
       ['implements missing members for objects that have been defined on a single line', 'singleLinePerson'],
+      ['implements missing members for interfaces that have been extended', 'employee'],
     ]
 
     it.each(happyPathCases)('%s', async (_, variableName) => {

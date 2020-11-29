@@ -5,9 +5,11 @@ export const MemberType = {
   Number: 0,
   Union: null,
   BuiltIn: null,
+  Boolean: false,
 } as const
+export type MemberType = typeof MemberType[keyof typeof MemberType]
 
-export type Member = typeof MemberType[keyof typeof MemberType] | Members
+export type Member = MemberType | Members
 export type Members = { [index: string]: Member }
 
 export class MemberParser {
@@ -21,7 +23,7 @@ export class MemberParser {
 
   public getMissingMembersForVariable(variableName: string, filePath: string): Members {
     const sourceFile = this.getSourceFile(filePath)
-    const { name, initializer } = this.getInitializedVariableDeclaration(variableName, sourceFile)
+    const { initializer, type } = this.getInitializedVariableDeclaration(variableName, sourceFile)
 
     const declaredProperties = initializer.properties.reduce((properties, propertyNode) => {
       const propertyName = propertyNode.name?.getText()
@@ -29,13 +31,8 @@ export class MemberParser {
       return properties
     }, new Set<string>())
 
-    const members: Members = {}
-    const { symbol } = this.typeChecker.getTypeAtLocation(name)
-    symbol.members?.forEach((symbol) => {
-      if (declaredProperties.has(symbol.name)) return
-      this.collectMembersFromSymbol(symbol, members)
-    })
-    return members
+    const { symbol } = this.typeChecker.getTypeAtLocation(type)
+    return this.collectMembersFromInterfaceOrTypeSymbol(symbol, declaredProperties)
   }
 
   public getVariableInfo(variableName: string, filePath: string): VariableInfo {
@@ -62,8 +59,8 @@ export class MemberParser {
   private getInitializedVariableDeclaration(
     variableName: string,
     sourceFile: ts.SourceFile,
-  ): { name: ts.BindingName; initializer: ts.ObjectLiteralExpression } {
-    const { name, initializer } = this.findNode(
+  ): { name: ts.BindingName; initializer: ts.ObjectLiteralExpression; type: ts.TypeReferenceNode } {
+    const { name, initializer, type } = this.findNode(
       sourceFile,
       (node): node is ts.VariableDeclaration => {
         if (!ts.isVariableDeclaration(node)) return false
@@ -75,52 +72,94 @@ export class MemberParser {
     if (!initializer) throw new Error(`There is no initializer for ${variableName}`)
     if (!ts.isObjectLiteralExpression(initializer))
       throw new Error(`Variable ${variableName} is not an object literal`)
+    if (!type || !ts.isTypeReferenceNode(type))
+      throw new Error('Only typed variables are supported right now')
 
-    return { name, initializer }
+    return { name, initializer, type }
   }
 
-  private collectMembersFromSymbol({ name, valueDeclaration }: ts.Symbol, members: Members): Member {
-    if (!ts.isPropertySignature(valueDeclaration) || !valueDeclaration.type) {
-      throw new Error(`bad property :O ${name}`)
-    }
+  private collectMembersFromSymbol(symbol: ts.Symbol): Member {
+    const { flags, name } = symbol
 
-    const type = this.typeChecker.getTypeAtLocation(valueDeclaration.type)
-
-    switch (type.flags) {
-      case ts.TypeFlags.String:
-        members[name] = MemberType.String
-        break
-      case ts.TypeFlags.Number:
-        members[name] = MemberType.Number
-        break
-      case ts.TypeFlags.Union:
-        members[name] = MemberType.Union
-        break
-      case ts.TypeFlags.Object: {
-        const typeSymbol = type.getSymbol()
-        if (!typeSymbol) throw new Error(`No type symbol found for ${name}`)
-
-        if (
-          typeSymbol
-            .getDeclarations()
-            ?.some((declaration) => this.program.isSourceFileDefaultLibrary(declaration.getSourceFile()))
-        ) {
-          members[name] = MemberType.BuiltIn
-          break
-        }
-
-        if ([ts.SymbolFlags.TypeLiteral, ts.SymbolFlags.Interface].includes(typeSymbol.flags)) {
-          const nestedMembers: Members = {}
-          typeSymbol.members?.forEach((symbol) => this.collectMembersFromSymbol(symbol, nestedMembers))
-          members[name] = nestedMembers
-          break
-        }
-      }
+    switch (flags) {
+      case ts.SymbolFlags.Interface:
+        return this.collectMembersFromInterfaceOrTypeSymbol(symbol)
+      case ts.SymbolFlags.Property:
+        return this.collectMembersFromPropertySymbol(symbol)
       default:
-        throw new Error(`unhandled object type for property ${name}`)
+        throw new Error(`unhandled symbol flag ${ts.SymbolFlags[flags]} for symbol ${name}`)
     }
+  }
 
-    return members
+  private collectMembersFromInterfaceOrTypeSymbol(
+    { flags, name, members, declarations }: ts.Symbol,
+    membersToIgnore?: ReadonlySet<string>,
+  ): Members {
+    if (![ts.SymbolFlags.Interface, ts.SymbolFlags.TypeLiteral].includes(flags))
+      throw new Error(`Expected ${name} to be an interface or type literal`)
+
+    if (!members) throw new Error(`symbol ${name} has no members`)
+
+    const nestedMembers: Members = {}
+    members.forEach((member) => {
+      if (membersToIgnore?.has(member.name)) return
+      nestedMembers[member.name] = this.collectMembersFromSymbol(member)
+    })
+
+    return declarations
+      .filter((declaration): declaration is ts.InterfaceDeclaration => ts.isInterfaceDeclaration(declaration))
+      .flatMap((declaration) => declaration.heritageClauses)
+      .flatMap((heritageClause) => heritageClause?.types)
+      .flatMap(
+        (heritageTypeNode) =>
+          heritageTypeNode && this.typeChecker.getSymbolAtLocation(heritageTypeNode.expression),
+      )
+      .reduce((accum, inheritedSymbol) => {
+        if (!inheritedSymbol) return accum
+
+        const inheritedMembers = this.collectMembersFromInterfaceOrTypeSymbol(
+          inheritedSymbol,
+          new Set(Object.keys(accum)),
+        )
+
+        return { ...accum, ...inheritedMembers }
+      }, nestedMembers)
+  }
+
+  private collectMembersFromPropertySymbol(symbol: ts.Symbol): Member {
+    const { name, valueDeclaration } = symbol
+    if (!ts.isPropertySignature(valueDeclaration)) throw new Error('Not a property signature')
+    if (!valueDeclaration.type) throw new Error('Value declaration does not have a type')
+
+    switch (valueDeclaration.type.kind) {
+      case ts.SyntaxKind.StringKeyword:
+        return MemberType.String
+      case ts.SyntaxKind.NumberKeyword:
+        return MemberType.Number
+      case ts.SyntaxKind.BooleanKeyword:
+        return MemberType.Boolean
+      case ts.SyntaxKind.UnionType:
+        return MemberType.Union
+      case ts.SyntaxKind.TypeLiteral:
+      case ts.SyntaxKind.TypeReference: {
+        const typeReferenceType = this.typeChecker.getTypeAtLocation(valueDeclaration.type)
+        if (typeReferenceType.symbol.flags === 33554497) return MemberType.BuiltIn
+
+        if ([ts.SymbolFlags.Interface, ts.SymbolFlags.TypeLiteral].includes(typeReferenceType.symbol.flags))
+          return this.collectMembersFromInterfaceOrTypeSymbol(typeReferenceType.symbol)
+
+        throw new Error(
+          `Unsupported type reference node kind ${
+            ts.SymbolFlags[typeReferenceType.symbol.flags]
+          } for ${name}`,
+        )
+      }
+
+      default:
+        throw new Error(
+          `Symbol ${name} is an unhandled syntax kind ${ts.SyntaxKind[valueDeclaration.type.kind]}`,
+        )
+    }
   }
 
   private findNode<T extends ts.Node>(
