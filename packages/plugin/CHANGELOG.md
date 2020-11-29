@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.1.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.0.2...ts-quickfixes-plugin-v1.1.0) (2020-11-29)
+
+
+### Features
+
+* **missing members:** implement members from extended interfaces ([d3c655a](https://github.com/tamj0rd2/ts-quickfixes/commit/d3c655aa0d7abb0082d1e5ff90d780e9c8af9d16)), closes [#6](https://github.com/tamj0rd2/ts-quickfixes/issues/6)
+
 # [ts-quickfixes-plugin-v1.0.2](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.0.1...ts-quickfixes-plugin-v1.0.2) (2020-11-19)
 
 
