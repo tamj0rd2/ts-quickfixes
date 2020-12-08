@@ -1,4 +1,3 @@
-import { resolve } from 'path'
 import ts from 'typescript/lib/tsserverlibrary'
 import { MemberParser, MemberType, VariableInfo } from './member-parser'
 import mockFs from 'mock-fs'
@@ -8,35 +7,71 @@ describe('MemberParser', () => {
 
   describe('getMissingMembersForVariable', () => {
     it('returns the correct members when there are none specified', () => {
-      const { createProgram, getFilePath } = createTestDeps()
-      const testFilePath = getFilePath('testing')
-      const memberParser = new MemberParser(createProgram(testFilePath))
+      const { createProgram } = createTestDeps()
+      const tsFilePath = 'file.ts'
+      mockFs({
+        [tsFilePath]: `
+        interface PhoneNumber {
+          countryCode: string
+          phoneNumber: number
+        }
+        
+        interface Person {
+          firstName: string
+          lastName: string
+          address: { city: string; postcode: string }
+          mobileNumber: PhoneNumber
+          status: 'Alive' | 'Dead'
+        }
+        
+        export const aPerson: Person = {}
+        `,
+      })
 
-      const members = memberParser.getMissingMembersForVariable('aPerson', testFilePath)
+      const memberParser = new MemberParser(createProgram(tsFilePath))
+      const members = memberParser.getMissingMembersForVariable('aPerson', tsFilePath)
 
       expect(members).toStrictEqual<typeof members>({
         firstName: MemberType.String,
         lastName: MemberType.String,
-        birthday: MemberType.BuiltIn,
         address: { city: MemberType.String, postcode: MemberType.String },
         mobileNumber: { countryCode: MemberType.String, phoneNumber: 0 },
         status: MemberType.Union,
       })
     })
 
-    it('returns the correct members when there is already one specified', () => {
-      const { createProgram, getFilePath } = createTestDeps()
-      const testFilePath = getFilePath('testing')
-      const memberParser = new MemberParser(createProgram(testFilePath))
+    it('only returns missing members when some members are already initialized', () => {
+      const { createProgram } = createTestDeps()
+      const tsFilePath = 'file.ts'
+      mockFs({
+        [tsFilePath]: `
+        interface PhoneNumber {
+          countryCode: string
+          phoneNumber: number
+        }
+        
+        interface Person {
+          firstName: string
+          lastName: string
+          address: { city: string; postcode: string }
+          mobileNumber: PhoneNumber
+          status: 'Alive' | 'Dead'
+        }
+        
+        export const aPerson: Person = {
+          lastName: 'my last name',
+          status: 'Alive',
+        }
+        `,
+      })
 
-      const members = memberParser.getMissingMembersForVariable('personWithOneProperty', testFilePath)
+      const memberParser = new MemberParser(createProgram(tsFilePath))
+      const members = memberParser.getMissingMembersForVariable('aPerson', tsFilePath)
 
       expect(members).toStrictEqual<typeof members>({
         firstName: MemberType.String,
-        birthday: MemberType.BuiltIn,
         address: { city: MemberType.String, postcode: MemberType.String },
         mobileNumber: { countryCode: MemberType.String, phoneNumber: 0 },
-        status: MemberType.Union,
       })
     })
 
@@ -68,81 +103,135 @@ describe('MemberParser', () => {
         })
       })
 
-      it.todo('gets the correct members when they are declared in different files')
+      it.skip('gets the correct members when they are declared in different files', () => {
+        const { createProgram } = createTestDeps()
+        const baseFilePath = 'base.ts'
+        const filePath = 'file.ts'
+        mockFs({
+          [baseFilePath]: `
+          export interface Animal {
+            age: number
+            hasLegs: boolean
+          }
+          `,
+          [filePath]: `
+          import { Animal } from '${baseFilePath}'
+
+          interface Dog extends Animal {
+            breed: string
+          }
+          
+          export const dog: Dog = {}`,
+        })
+
+        const memberParser = new MemberParser(createProgram(filePath, baseFilePath))
+        const members = memberParser.getMissingMembersForVariable('dog', filePath)
+
+        expect(members).toStrictEqual<typeof members>({
+          age: MemberType.Number,
+          breed: MemberType.String,
+          hasLegs: MemberType.Boolean,
+        })
+      })
     })
   })
 
   describe('getVariableInfo', () => {
-    it(`returns the variable's value when there are no members`, () => {
-      const { createProgram, getFilePath } = createTestDeps()
-      const testFilePath = getFilePath('testing')
-      const memberParser = new MemberParser(createProgram(testFilePath))
+    it(`returns an empty array of lines when a variable has no members`, () => {
+      const { createProgram } = createTestDeps()
+      const filePath = 'file.ts'
+      mockFs({ [filePath]: `type Person = { name: string };export const aPerson: Person = {}` })
 
-      const info = memberParser.getVariableInfo('aPerson', testFilePath)
+      const memberParser = new MemberParser(createProgram(filePath))
+      const info = memberParser.getVariableInfo('aPerson', filePath)
 
       expect(info).toStrictEqual<VariableInfo>({
         lines: [],
-        start: { character: 31, line: 14, pos: 280 },
-        end: { character: 34, line: 14, pos: 283 },
+        start: { character: 62, line: 0, pos: 61 },
+        end: { character: 65, line: 0, pos: 64 },
       })
     })
 
     it(`returns the variable's value when there are some members`, () => {
-      const { createProgram, getFilePath } = createTestDeps()
-      const testFilePath = getFilePath('testing')
-      const memberParser = new MemberParser(createProgram(testFilePath))
+      const { createProgram } = createTestDeps()
+      const filePath = 'file.ts'
+      mockFs({
+        [filePath]: `
+        interface Person {
+          firstName: string
+          lastName: string
+          address: { city: string; postcode: string }
+          mobileNumber: PhoneNumber
+          status: 'Alive' | 'Dead'
+        }
+        
+        export const targetVariable: Person = {
+          lastName: 'my last name',
+          status: 'Alive',
+        }`,
+      })
 
-      const info = memberParser.getVariableInfo('personWithOneProperty', testFilePath)
+      const memberParser = new MemberParser(createProgram(filePath))
+      const info = memberParser.getVariableInfo('targetVariable', filePath)
 
       expect(info).toStrictEqual<VariableInfo>({
-        lines: [`lastName: 'my last name'`],
-        start: { character: 45, line: 16, pos: 329 },
-        end: { character: 2, line: 18, pos: 361 },
+        lines: [`lastName: 'my last name'`, `status: 'Alive'`],
+        start: expect.any(Object),
+        end: expect.any(Object),
       })
     })
 
     it(`returns the variable's text when it is a single line declaration`, () => {
-      const { createProgram, getFilePath } = createTestDeps()
-      const testFilePath = getFilePath('testing')
-      const memberParser = new MemberParser(createProgram(testFilePath))
+      const { createProgram } = createTestDeps()
+      const filePath = 'file.ts'
+      mockFs({
+        [filePath]: `
+        interface Person {
+          firstName: string
+          lastName: string
+          address: { city: string; postcode: string }
+          mobileNumber: PhoneNumber
+          status: 'Alive' | 'Dead'
+        }
+        
+        export const targetVariable: Person = { status: 'Dead', lastName: 'my last name' }`,
+      })
 
-      const info = memberParser.getVariableInfo('singleLinePerson', testFilePath)
+      const memberParser = new MemberParser(createProgram(filePath))
+      const info = memberParser.getVariableInfo('targetVariable', filePath)
 
       expect(info).toStrictEqual<VariableInfo>({
-        lines: [`birthday: new Date()`, `status: 'Alive'`],
-        start: { character: 40, line: 20, pos: 402 },
-        end: { character: 82, line: 20, pos: 444 },
+        lines: [`status: 'Dead'`, `lastName: 'my last name'`],
+        start: expect.any(Object),
+        end: expect.any(Object),
       })
     })
   })
 
   describe('getVariableNameAtLocation', () => {
     it('can get a variable name at a certain location', () => {
-      const { createProgram, getFilePath } = createTestDeps()
-      const testFilePath = getFilePath('testing')
-      const program = createProgram(testFilePath)
+      const { createProgram } = createTestDeps()
+      const filePath = 'file.ts'
+      mockFs({ [filePath]: `type Person = { name: string };export const myVariable = {}` })
 
-      const expectedVariableName = 'singleLinePerson'
-      const start = 376
-      const end = start + expectedVariableName.length
+      const memberParser = new MemberParser(createProgram(filePath))
+      const variableName = memberParser.getVariableNameAtLocation(44, 54, filePath)
 
-      const variableName = new MemberParser(program).getVariableNameAtLocation(start, end, testFilePath)
-
-      expect(variableName).toEqual(expectedVariableName)
+      expect(variableName).toEqual('myVariable')
     })
   })
 })
 
 function createTestDeps() {
-  const fixtureFolder = resolve(process.cwd(), `../../test-environment`)
   return {
     createProgram: (...fileNames: [string, ...string[]]) =>
       ts.createProgram(fileNames, {
         noEmit: true,
         module: ts.ModuleKind.CommonJS,
-        target: ts.ScriptTarget.Latest,
+        target: ts.ScriptTarget.ESNext,
+        lib: ['es2019'],
+        strict: true,
       }),
-    getFilePath: (fileName: string) => `${fixtureFolder}/${fileName}.ts`,
     makeFileContent: (...lines: string[]) => lines.join('\n'),
   }
 }
