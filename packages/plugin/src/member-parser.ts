@@ -6,11 +6,11 @@ export const MemberType = {
   Union: null,
   BuiltIn: null,
   Boolean: false,
+  Never: 'never',
 } as const
 export type MemberType = typeof MemberType[keyof typeof MemberType]
 
-export type Member = MemberType | Members
-export type Members = { [index: string]: Member }
+export type Member = MemberType | GroupedMembers | EnumMember
 
 export class MemberParser {
   private readonly typeChecker: ts.TypeChecker
@@ -21,7 +21,7 @@ export class MemberParser {
     this.typeChecker = this.program.getTypeChecker()
   }
 
-  public getMissingMembersForVariable(variableName: string, filePath: string): Members {
+  public getMissingMembersForVariable(variableName: string, filePath: string): GroupedMembers {
     const sourceFile = this.getSourceFile(filePath)
     const { initializer, type } = this.getInitializedVariableDeclaration(variableName, sourceFile)
 
@@ -94,16 +94,16 @@ export class MemberParser {
   private collectMembersFromInterfaceOrTypeSymbol(
     { flags, name, members, declarations }: ts.Symbol,
     membersToIgnore?: ReadonlySet<string>,
-  ): Members {
+  ): GroupedMembers {
     if (![ts.SymbolFlags.Interface, ts.SymbolFlags.TypeLiteral].includes(flags))
       throw new Error(`Expected ${name} to be an interface or type literal`)
 
     if (!members) throw new Error(`symbol ${name} has no members`)
 
-    const nestedMembers: Members = {}
+    const groupedMembers = new GroupedMembers()
     members.forEach((member) => {
       if (membersToIgnore?.has(member.name)) return
-      nestedMembers[member.name] = this.collectMembersFromSymbol(member)
+      groupedMembers.addMember(member.name, this.collectMembersFromSymbol(member))
     })
 
     return declarations
@@ -112,18 +112,19 @@ export class MemberParser {
       .flatMap((heritageClause) => heritageClause?.types)
       .flatMap(
         (heritageTypeNode) =>
-          heritageTypeNode && this.typeChecker.getSymbolAtLocation(heritageTypeNode.expression),
+          heritageTypeNode && this.typeChecker.getTypeAtLocation(heritageTypeNode.expression),
       )
-      .reduce((accum, inheritedSymbol) => {
-        if (!inheritedSymbol) return accum
+      .reduce((groupedMembers, inheritedType) => {
+        if (!inheritedType) return groupedMembers
+        const inheritedSymbol = inheritedType.symbol
 
         const inheritedMembers = this.collectMembersFromInterfaceOrTypeSymbol(
           inheritedSymbol,
-          new Set(Object.keys(accum)),
+          new Set(Object.keys(groupedMembers)),
         )
 
-        return { ...accum, ...inheritedMembers }
-      }, nestedMembers)
+        return groupedMembers.concat(inheritedMembers)
+      }, groupedMembers)
   }
 
   private collectMembersFromPropertySymbol(symbol: ts.Symbol): Member {
@@ -147,6 +148,13 @@ export class MemberParser {
 
         if ([ts.SymbolFlags.Interface, ts.SymbolFlags.TypeLiteral].includes(typeReferenceType.symbol.flags))
           return this.collectMembersFromInterfaceOrTypeSymbol(typeReferenceType.symbol)
+
+        if (typeReferenceType.symbol.flags === ts.SymbolFlags.RegularEnum) {
+          const firstEnumName = typeReferenceType.symbol.exports?.keys().next().value.toString()
+          return firstEnumName
+            ? new EnumMember(typeReferenceType.symbol.name, firstEnumName)
+            : MemberType.Never
+        }
 
         throw new Error(
           `Unsupported type reference node kind ${
@@ -200,4 +208,24 @@ export interface VariableInfo {
   lines: string[]
   start: Position
   end: Position
+}
+
+export class GroupedMembers {
+  public readonly members: Record<string, Member>
+
+  constructor(members?: Record<string, Member>) {
+    this.members = members ?? {}
+  }
+
+  public addMember(key: string, member: Member): void {
+    this.members[key] = member
+  }
+
+  public concat(groupedMembers: GroupedMembers): GroupedMembers {
+    return new GroupedMembers({ ...this.members, ...groupedMembers.members })
+  }
+}
+
+export class EnumMember {
+  constructor(public readonly enumName: string, public readonly member: string) {}
 }

@@ -1,5 +1,5 @@
 import { LineEnding, MemberFormatter } from './formatter'
-import { Members, MemberType } from './member-parser'
+import { EnumMember, GroupedMembers, MemberType } from './member-parser'
 
 describe('Formatter', () => {
   Object.keys(LineEnding).forEach((lineEndingKey) => {
@@ -8,9 +8,9 @@ describe('Formatter', () => {
     describe(`format with line ending ${lineEndingKey}`, () => {
       it(`formats members nicely when all members are missing`, () => {
         const { createMembers } = createTestDeps()
-        const members = createMembers()
+        const groupedMembers = createMembers()
 
-        const formattedMembers = new MemberFormatter().format([], members, lineEnding)
+        const formattedMembers = new MemberFormatter().format([], groupedMembers, lineEnding)
 
         // TODO: this should eventually use the user's space and trailing comma preferences
         expect(formattedMembers).toStrictEqual(
@@ -21,7 +21,6 @@ describe('Formatter', () => {
             `  birthday: null,`,
             `  address: {`,
             `    city: 'todo',`,
-            `    postcode: 'todo',`,
             `  },`,
             `  mobileNumber: {`,
             `    countryCode: 'todo',`,
@@ -29,6 +28,7 @@ describe('Formatter', () => {
             `  },`,
             `  status: null,`,
             `  isEmployed: false,`,
+            `  favouriteColour: Colour.Purple,`,
             `}`,
           ].join(lineEnding),
         )
@@ -36,13 +36,13 @@ describe('Formatter', () => {
 
       it(`formats members nicely when only some members are missing`, () => {
         const { createMembers } = createTestDeps()
-        const members = createMembers()
-        delete members.lastName
-        delete members.birthday
+        const groupedMembers = createMembers()
+        delete groupedMembers.members.lastName
+        delete groupedMembers.members.birthday
 
         const existingMembers = [`lastName: 'a really cool name'`, `birthday: new Date()`]
 
-        const formattedMembers = new MemberFormatter().format(existingMembers, members, lineEnding)
+        const formattedMembers = new MemberFormatter().format(existingMembers, groupedMembers, lineEnding)
 
         // TODO: this should eventually use the user's space and trailing comma preferences
         expect(formattedMembers).toStrictEqual(
@@ -53,7 +53,6 @@ describe('Formatter', () => {
             `  firstName: 'todo',`,
             `  address: {`,
             `    city: 'todo',`,
-            `    postcode: 'todo',`,
             `  },`,
             `  mobileNumber: {`,
             `    countryCode: 'todo',`,
@@ -61,6 +60,7 @@ describe('Formatter', () => {
             `  },`,
             `  status: null,`,
             `  isEmployed: false,`,
+            `  favouriteColour: Colour.Purple,`,
             `}`,
           ].join(lineEnding),
         )
@@ -71,20 +71,22 @@ describe('Formatter', () => {
 
 function createTestDeps() {
   return {
-    createMembers: (): Members => ({
-      firstName: MemberType.String,
-      lastName: MemberType.String,
-      birthday: MemberType.BuiltIn,
-      address: {
-        city: MemberType.String,
-        postcode: MemberType.String,
-      },
-      mobileNumber: {
-        countryCode: MemberType.String,
-        phoneNumber: MemberType.Number,
-      },
-      status: MemberType.Union,
-      isEmployed: MemberType.Boolean,
-    }),
+    createMembers: (): GroupedMembers =>
+      new GroupedMembers({
+        firstName: MemberType.String,
+        lastName: MemberType.String,
+        birthday: MemberType.BuiltIn,
+        address: new GroupedMembers({
+          city: MemberType.String,
+          postcode: MemberType.Never,
+        }),
+        mobileNumber: new GroupedMembers({
+          countryCode: MemberType.String,
+          phoneNumber: MemberType.Number,
+        }),
+        status: MemberType.Union,
+        isEmployed: MemberType.Boolean,
+        favouriteColour: new EnumMember('Colour', 'Purple'),
+      }),
   }
 }

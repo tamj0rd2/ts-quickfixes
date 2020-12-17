@@ -1,3 +1,5 @@
+import { Animal } from './another-file'
+
 interface PhoneNumber {
   countryCode: string
   phoneNumber: number
@@ -25,3 +27,15 @@ interface Employee extends Person {
 }
 
 export const employee: Employee = {}
+
+enum DogBreed {
+  Beagle,
+  GoldenRetriever,
+  Labrador,
+}
+
+interface Dog extends Animal {
+  breed: DogBreed
+}
+
+export const dog: Dog = {}

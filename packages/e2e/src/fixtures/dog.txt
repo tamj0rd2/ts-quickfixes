@@ -1,0 +1,5 @@
+{
+  breed: DogBreed.Beagle,
+  hasLegs: false,
+  age: 0,
+}

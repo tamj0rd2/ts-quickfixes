@@ -19,6 +19,7 @@ describe('Acceptance tests', () => {
       ['only implements missing members if some members are already defined', 'personWithOneProperty'],
       ['implements missing members for objects that have been defined on a single line', 'singleLinePerson'],
       ['implements missing members for interfaces that have been extended', 'employee'],
+      ['implements missing members for interfaces that have been extended from other files', 'dog'],
     ]
 
     it.each(happyPathCases)('%s', async (_, variableName) => {

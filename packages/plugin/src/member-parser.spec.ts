@@ -1,15 +1,18 @@
 import ts from 'typescript/lib/tsserverlibrary'
-import { MemberParser, MemberType, VariableInfo } from './member-parser'
-import mockFs from 'mock-fs'
+import { EnumMember, GroupedMembers, MemberParser, MemberType, VariableInfo } from './member-parser'
+import _mockFs from 'mock-fs'
+import { resolve } from 'path'
 
 describe('MemberParser', () => {
-  afterEach(() => mockFs.restore())
+  afterEach(() => _mockFs.restore())
+
+  const createTestDeps = curryTestDeps()
 
   describe('getMissingMembersForVariable', () => {
     it('returns the correct members when there are none specified', () => {
-      const { createProgram } = createTestDeps()
+      const { createProgram, setupMockFiles } = createTestDeps()
       const tsFilePath = 'file.ts'
-      mockFs({
+      setupMockFiles({
         [tsFilePath]: `
         interface PhoneNumber {
           countryCode: string
@@ -19,6 +22,7 @@ describe('MemberParser', () => {
         interface Person {
           firstName: string
           lastName: string
+          birthday: Date
           address: { city: string; postcode: string }
           mobileNumber: PhoneNumber
           status: 'Alive' | 'Dead'
@@ -31,19 +35,22 @@ describe('MemberParser', () => {
       const memberParser = new MemberParser(createProgram(tsFilePath))
       const members = memberParser.getMissingMembersForVariable('aPerson', tsFilePath)
 
-      expect(members).toStrictEqual<typeof members>({
-        firstName: MemberType.String,
-        lastName: MemberType.String,
-        address: { city: MemberType.String, postcode: MemberType.String },
-        mobileNumber: { countryCode: MemberType.String, phoneNumber: 0 },
-        status: MemberType.Union,
-      })
+      expect(members).toStrictEqual<typeof members>(
+        new GroupedMembers({
+          firstName: MemberType.String,
+          lastName: MemberType.String,
+          birthday: MemberType.BuiltIn,
+          address: new GroupedMembers({ city: MemberType.String, postcode: MemberType.String }),
+          mobileNumber: new GroupedMembers({ countryCode: MemberType.String, phoneNumber: 0 }),
+          status: MemberType.Union,
+        }),
+      )
     })
 
     it('only returns missing members when some members are already initialized', () => {
-      const { createProgram } = createTestDeps()
+      const { createProgram, setupMockFiles } = createTestDeps()
       const tsFilePath = 'file.ts'
-      mockFs({
+      setupMockFiles({
         [tsFilePath]: `
         interface PhoneNumber {
           countryCode: string
@@ -68,18 +75,47 @@ describe('MemberParser', () => {
       const memberParser = new MemberParser(createProgram(tsFilePath))
       const members = memberParser.getMissingMembersForVariable('aPerson', tsFilePath)
 
-      expect(members).toStrictEqual<typeof members>({
-        firstName: MemberType.String,
-        address: { city: MemberType.String, postcode: MemberType.String },
-        mobileNumber: { countryCode: MemberType.String, phoneNumber: 0 },
+      expect(members).toStrictEqual<typeof members>(
+        new GroupedMembers({
+          firstName: MemberType.String,
+          address: new GroupedMembers({ city: MemberType.String, postcode: MemberType.String }),
+          mobileNumber: new GroupedMembers({ countryCode: MemberType.String, phoneNumber: 0 }),
+        }),
+      )
+    })
+
+    it('can get missing enum members', () => {
+      const { createProgram, setupMockFiles } = createTestDeps()
+      const tsFilePath = 'file.ts'
+      setupMockFiles({
+        [tsFilePath]: `
+        enum Colour {
+          Orange,
+          Green,
+          Blue
+        }
+        
+        interface Person {
+          favouriteColour: Colour
+        }
+        
+        export const person: Person = {}
+        `,
       })
+
+      const memberParser = new MemberParser(createProgram(tsFilePath))
+      const members = memberParser.getMissingMembersForVariable('person', tsFilePath)
+
+      expect(members).toStrictEqual<typeof members>(
+        new GroupedMembers({ favouriteColour: new EnumMember('Colour', 'Orange') }),
+      )
     })
 
     describe('when the interface extends another interface', () => {
       it('gets the correct members when they are declared in the same file', () => {
-        const { createProgram } = createTestDeps()
+        const { createProgram, setupMockFiles } = createTestDeps()
         const filePath = 'file.ts'
-        mockFs({
+        setupMockFiles({
           [filePath]: `
           interface Animal {
             age: number
@@ -96,18 +132,21 @@ describe('MemberParser', () => {
         const memberParser = new MemberParser(createProgram(filePath))
         const members = memberParser.getMissingMembersForVariable('dog', filePath)
 
-        expect(members).toStrictEqual<typeof members>({
-          age: MemberType.Number,
-          breed: MemberType.String,
-          hasLegs: MemberType.Boolean,
-        })
+        expect(members).toStrictEqual<typeof members>(
+          new GroupedMembers({
+            age: MemberType.Number,
+            breed: MemberType.String,
+            hasLegs: MemberType.Boolean,
+          }),
+        )
       })
 
-      it.skip('gets the correct members when they are declared in different files', () => {
-        const { createProgram } = createTestDeps()
+      it('gets the correct members when they are declared in different files', () => {
+        const { createProgram, setupMockFiles, createImportStatement } = createTestDeps()
         const baseFilePath = 'base.ts'
         const filePath = 'file.ts'
-        mockFs({
+
+        setupMockFiles({
           [baseFilePath]: `
           export interface Animal {
             age: number
@@ -115,7 +154,7 @@ describe('MemberParser', () => {
           }
           `,
           [filePath]: `
-          import { Animal } from '${baseFilePath}'
+          ${createImportStatement('Animal', baseFilePath)}
 
           interface Dog extends Animal {
             breed: string
@@ -127,20 +166,22 @@ describe('MemberParser', () => {
         const memberParser = new MemberParser(createProgram(filePath, baseFilePath))
         const members = memberParser.getMissingMembersForVariable('dog', filePath)
 
-        expect(members).toStrictEqual<typeof members>({
-          age: MemberType.Number,
-          breed: MemberType.String,
-          hasLegs: MemberType.Boolean,
-        })
+        expect(members).toStrictEqual<typeof members>(
+          new GroupedMembers({
+            age: MemberType.Number,
+            breed: MemberType.String,
+            hasLegs: MemberType.Boolean,
+          }),
+        )
       })
     })
   })
 
   describe('getVariableInfo', () => {
     it(`returns an empty array of lines when a variable has no members`, () => {
-      const { createProgram } = createTestDeps()
+      const { createProgram, setupMockFiles } = createTestDeps()
       const filePath = 'file.ts'
-      mockFs({ [filePath]: `type Person = { name: string };export const aPerson: Person = {}` })
+      setupMockFiles({ [filePath]: `type Person = { name: string };export const aPerson: Person = {}` })
 
       const memberParser = new MemberParser(createProgram(filePath))
       const info = memberParser.getVariableInfo('aPerson', filePath)
@@ -153,15 +194,15 @@ describe('MemberParser', () => {
     })
 
     it(`returns the variable's value when there are some members`, () => {
-      const { createProgram } = createTestDeps()
+      const { createProgram, setupMockFiles } = createTestDeps()
       const filePath = 'file.ts'
-      mockFs({
+      setupMockFiles({
         [filePath]: `
         interface Person {
           firstName: string
           lastName: string
           address: { city: string; postcode: string }
-          mobileNumber: PhoneNumber
+          mobileNumber: string
           status: 'Alive' | 'Dead'
         }
         
@@ -182,15 +223,15 @@ describe('MemberParser', () => {
     })
 
     it(`returns the variable's text when it is a single line declaration`, () => {
-      const { createProgram } = createTestDeps()
+      const { createProgram, setupMockFiles } = createTestDeps()
       const filePath = 'file.ts'
-      mockFs({
+      setupMockFiles({
         [filePath]: `
         interface Person {
           firstName: string
           lastName: string
           address: { city: string; postcode: string }
-          mobileNumber: PhoneNumber
+          mobileNumber: string
           status: 'Alive' | 'Dead'
         }
         
@@ -210,9 +251,9 @@ describe('MemberParser', () => {
 
   describe('getVariableNameAtLocation', () => {
     it('can get a variable name at a certain location', () => {
-      const { createProgram } = createTestDeps()
+      const { createProgram, setupMockFiles } = createTestDeps()
       const filePath = 'file.ts'
-      mockFs({ [filePath]: `type Person = { name: string };export const myVariable = {}` })
+      setupMockFiles({ [filePath]: `type Person = { name: string };export const myVariable = {}` })
 
       const memberParser = new MemberParser(createProgram(filePath))
       const variableName = memberParser.getVariableNameAtLocation(44, 54, filePath)
@@ -222,16 +263,49 @@ describe('MemberParser', () => {
   })
 })
 
-function createTestDeps() {
-  return {
-    createProgram: (...fileNames: [string, ...string[]]) =>
-      ts.createProgram(fileNames, {
-        noEmit: true,
-        module: ts.ModuleKind.CommonJS,
-        target: ts.ScriptTarget.ESNext,
-        lib: ['es2019'],
-        strict: true,
-      }),
-    makeFileContent: (...lines: string[]) => lines.join('\n'),
+function curryTestDeps() {
+  const repoRoot = resolve(__dirname, '../../..')
+  const nodeModulesFolder = repoRoot + '/node_modules'
+  const tsLibFolder = nodeModulesFolder + '/typescript/lib'
+  const realTsLibFolder = _mockFs.load(tsLibFolder)
+
+  return function createTestDeps() {
+    return {
+      createProgram: (...fileNames: [string, ...string[]]) => {
+        const program = ts.createProgram(fileNames, {
+          noEmit: true,
+          module: ts.ModuleKind.CommonJS,
+          baseUrl: repoRoot,
+        })
+
+        /** ===================================================================================/
+         * uncomment to enable diagnostics for the created typescript program.
+         * of course, if the typescript compilation has errors (other than the one we expect),
+         * parsing the AST will probably give very strange results/errors.
+         * ===================================================================================*/
+        const diagnostics = ts.getPreEmitDiagnostics(program)
+        if (diagnostics?.length > 1) {
+          debugger
+          process.stdout.write(
+            JSON.stringify(
+              diagnostics.map(({ file, messageText }) => ({ messageText, filePath: file?.fileName })),
+              null,
+              2,
+            ),
+          )
+          throw new Error('Unexpected errors while creating the TS program')
+        }
+
+        return program
+      },
+      setupMockFiles: (files: Record<string, string>) =>
+        _mockFs({
+          [tsLibFolder]: realTsLibFolder,
+          ...files,
+        }),
+      createImportStatement(name: string, fileToImportFrom: string) {
+        return `import { ${name} } from './${fileToImportFrom.replace('.ts', '')}'`
+      },
+    }
   }
 }
