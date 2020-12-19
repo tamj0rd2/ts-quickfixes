@@ -17,7 +17,7 @@ describe('Formatter', () => {
           [
             `{`,
             `  firstName: 'todo',`,
-            `  lastName: 'todo',`,
+            `  favouriteBooks: [],`,
             `  birthday: null,`,
             `  address: {`,
             `    city: 'todo',`,
@@ -51,6 +51,7 @@ describe('Formatter', () => {
             `  lastName: 'a really cool name',`,
             `  birthday: new Date(),`,
             `  firstName: 'todo',`,
+            `  favouriteBooks: [],`,
             `  address: {`,
             `    city: 'todo',`,
             `  },`,
@@ -74,7 +75,7 @@ function createTestDeps() {
     createMembers: (): GroupedMembers =>
       new GroupedMembers({
         firstName: MemberType.String,
-        lastName: MemberType.String,
+        favouriteBooks: MemberType.Array,
         birthday: MemberType.BuiltIn,
         address: new GroupedMembers({
           city: MemberType.String,
