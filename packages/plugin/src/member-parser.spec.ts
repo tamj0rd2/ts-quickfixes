@@ -21,7 +21,7 @@ describe('MemberParser', () => {
         
         interface Person {
           firstName: string
-          lastName: string
+          favouriteFilms: string[]
           birthday: Date
           address: { city: string; postcode: string }
           mobileNumber: PhoneNumber
@@ -38,7 +38,7 @@ describe('MemberParser', () => {
       expect(members).toStrictEqual<typeof members>(
         new GroupedMembers({
           firstName: MemberType.String,
-          lastName: MemberType.String,
+          favouriteFilms: MemberType.Array,
           birthday: MemberType.BuiltIn,
           address: new GroupedMembers({ city: MemberType.String, postcode: MemberType.String }),
           mobileNumber: new GroupedMembers({ countryCode: MemberType.String, phoneNumber: 0 }),

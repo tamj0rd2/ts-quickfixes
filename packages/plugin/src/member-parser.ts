@@ -7,6 +7,7 @@ export const MemberType = {
   BuiltIn: null,
   Boolean: false,
   Never: 'never',
+  Array: '[]',
 } as const
 export type MemberType = typeof MemberType[keyof typeof MemberType]
 
@@ -141,6 +142,8 @@ export class MemberParser {
         return MemberType.Boolean
       case ts.SyntaxKind.UnionType:
         return MemberType.Union
+      case ts.SyntaxKind.ArrayType:
+        return MemberType.Array
       case ts.SyntaxKind.TypeLiteral:
       case ts.SyntaxKind.TypeReference: {
         const typeReferenceType = this.typeChecker.getTypeAtLocation(valueDeclaration.type)

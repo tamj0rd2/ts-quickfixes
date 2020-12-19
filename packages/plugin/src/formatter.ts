@@ -60,6 +60,7 @@ export class MemberFormatter {
       case MemberType.BuiltIn:
       case MemberType.Number:
       case MemberType.Union:
+      case MemberType.Array:
         return getSimpleMembers(member)
     }
   }
