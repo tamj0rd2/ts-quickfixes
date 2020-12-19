@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.3.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.2.0...ts-quickfixes-plugin-v1.3.0) (2020-12-19)
+
+
+### Features
+
+* **plugin:** implement missing members that are arrays ([845a793](https://github.com/tamj0rd2/ts-quickfixes/commit/845a7936b89e30845c3c27e0c3bd8082d1678f89))
+
 # [ts-quickfixes-plugin-v1.2.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.1.0...ts-quickfixes-plugin-v1.2.0) (2020-12-19)
 
 
