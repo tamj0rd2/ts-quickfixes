@@ -4,8 +4,6 @@ import { E2E_ROOT_DIR } from '../paths'
 import stripAnsi from 'strip-ansi'
 
 export async function run(): Promise<void> {
-  console.log(E2E_ROOT_DIR)
-
   const config: Config.Argv = {
     $0: '',
     _: [],
@@ -19,13 +17,23 @@ export async function run(): Promise<void> {
 
   const { results } = await runCLI(config, [`${E2E_ROOT_DIR}/jest.config.js`])
 
-  results.testResults.forEach((testResult) => {
+  const formattedResults = results.testResults.map((testResult) => {
     const intro = testResult.skipped
       ? 'Skipped'
       : testResult.numFailingTests > 0 || testResult.failureMessage
       ? 'Failed'
       : 'Passed'
     const failureMessage = testResult.failureMessage ? `\n${stripAnsi(testResult.failureMessage)}` : ''
-    console.log(`[${intro.toUpperCase()}] ${testResult.testFilePath}${failureMessage}`)
+
+    return {
+      formattedMessage: `[${intro.toUpperCase()}] ${testResult.testFilePath}${failureMessage}`,
+      didFail: intro === 'Failed',
+    }
   })
+
+  formattedResults.forEach((result) => console.log(result.formattedMessage))
+
+  if (formattedResults.some((result) => result.didFail === true)) {
+    throw new Error('Some tests failed')
+  }
 }
