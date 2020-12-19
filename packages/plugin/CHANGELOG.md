@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.2.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.1.0...ts-quickfixes-plugin-v1.2.0) (2020-12-19)
+
+
+### Features
+
+* **plugin:** implement inherited members ([7424ffb](https://github.com/tamj0rd2/ts-quickfixes/commit/7424ffba3642b23038cad65776dbcfa109ea9872))
+
 # [ts-quickfixes-plugin-v1.1.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.0.2...ts-quickfixes-plugin-v1.1.0) (2020-11-29)
 
 
