@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/tamj0rd2/ts-quickfixes#readme",
   "dependencies": {
-    "ts-quickfixes-plugin": "^1.1.0"
+    "ts-quickfixes-plugin": "latest"
   },
   "keywords": [],
   "author": "tamj0rd2"
