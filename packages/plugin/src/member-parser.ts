@@ -1,17 +1,14 @@
 import ts from 'typescript'
-
-export const MemberType = {
-  String: 'todo',
-  Number: 0,
-  Union: null,
-  BuiltIn: null,
-  Boolean: false,
-  Never: 'never',
-  Array: '[]',
-} as const
-export type MemberType = typeof MemberType[keyof typeof MemberType]
-
-export type Member = MemberType | GroupedMembers | EnumMember
+import {
+  BooleanMember,
+  EnumMember,
+  NumberMember,
+  StringMember,
+  ArrayMember,
+  UnimplementedMember,
+} from './members/simple-types'
+import { Member } from './members/member'
+import { ObjectLiteralMember } from './members/object-literal-member'
 
 export class MemberParser {
   private readonly typeChecker: ts.TypeChecker
@@ -22,7 +19,7 @@ export class MemberParser {
     this.typeChecker = this.program.getTypeChecker()
   }
 
-  public getMissingMembersForVariable(variableName: string, filePath: string): GroupedMembers {
+  public getMissingMembersForVariable(variableName: string, filePath: string): ObjectLiteralMember {
     const sourceFile = this.getSourceFile(filePath)
     const { initializer, type } = this.getInitializedVariableDeclaration(variableName, sourceFile)
 
@@ -33,7 +30,7 @@ export class MemberParser {
     }, new Set<string>())
 
     const { symbol } = this.typeChecker.getTypeAtLocation(type)
-    return this.collectMembersFromInterfaceOrTypeSymbol(symbol, declaredProperties)
+    return this.collectMembersFromInterfaceOrTypeSymbol(symbol, declaredProperties, undefined)
   }
 
   public getVariableInfo(variableName: string, filePath: string): VariableInfo {
@@ -57,11 +54,34 @@ export class MemberParser {
     return sourceFile.getFullText().slice(start, end)
   }
 
+  public fillMissingMembers(variableName: string, filePath: string): string {
+    const sourceFile = this.getSourceFile(filePath)
+    const variableDeclaration = this.getInitializedVariableDeclaration(variableName, sourceFile)
+
+    const missingMembers = this.getMissingMembersForVariable(variableName, filePath)
+
+    const newInitialiser = ts.factory.updateObjectLiteralExpression(variableDeclaration.initializer, [
+      ...variableDeclaration.initializer.properties,
+      ...missingMembers.toArray().map((member) => member.createPropertyAssignment()),
+    ])
+
+    return ts
+      .createPrinter(undefined, {
+        substituteNode: (_, node) => (node === variableDeclaration.initializer ? newInitialiser : node),
+      })
+      .printNode(ts.EmitHint.Unspecified, variableDeclaration.initializer, sourceFile)
+  }
+
   private getInitializedVariableDeclaration(
     variableName: string,
     sourceFile: ts.SourceFile,
-  ): { name: ts.BindingName; initializer: ts.ObjectLiteralExpression; type: ts.TypeReferenceNode } {
-    const { name, initializer, type } = this.findNode(
+  ): {
+    name: ts.BindingName
+    initializer: ts.ObjectLiteralExpression
+    type: ts.TypeReferenceNode
+    node: ts.VariableDeclaration
+  } {
+    const node = this.findNode(
       sourceFile,
       (node): node is ts.VariableDeclaration => {
         if (!ts.isVariableDeclaration(node)) return false
@@ -69,6 +89,7 @@ export class MemberParser {
       },
       `Could not find a variable identifier for ${variableName}`,
     )
+    const { name, initializer, type } = node
 
     if (!initializer) throw new Error(`There is no initializer for ${variableName}`)
     if (!ts.isObjectLiteralExpression(initializer))
@@ -76,15 +97,15 @@ export class MemberParser {
     if (!type || !ts.isTypeReferenceNode(type))
       throw new Error('Only typed variables are supported right now')
 
-    return { name, initializer, type }
+    return { name, initializer, type, node }
   }
 
-  private collectMembersFromSymbol(symbol: ts.Symbol): Member {
+  private collectMembersFromSymbol(symbol: ts.Symbol, memberName: string): Member | undefined {
     const { flags, name } = symbol
 
     switch (flags) {
       case ts.SymbolFlags.Interface:
-        return this.collectMembersFromInterfaceOrTypeSymbol(symbol)
+        return this.collectMembersFromInterfaceOrTypeSymbol(symbol, undefined, memberName)
       case ts.SymbolFlags.Property:
         return this.collectMembersFromPropertySymbol(symbol)
       default:
@@ -94,17 +115,23 @@ export class MemberParser {
 
   private collectMembersFromInterfaceOrTypeSymbol(
     { flags, name, members, declarations }: ts.Symbol,
-    membersToIgnore?: ReadonlySet<string>,
-  ): GroupedMembers {
+    membersToIgnore: ReadonlySet<string> | undefined,
+    memberName: string | undefined,
+  ): ObjectLiteralMember {
     if (![ts.SymbolFlags.Interface, ts.SymbolFlags.TypeLiteral].includes(flags))
       throw new Error(`Expected ${name} to be an interface or type literal`)
 
     if (!members) throw new Error(`symbol ${name} has no members`)
 
-    const groupedMembers = new GroupedMembers()
+    const groupedMembers = memberName
+      ? new ObjectLiteralMember(memberName)
+      : ObjectLiteralMember.createTopLevel()
+
     members.forEach((member) => {
       if (membersToIgnore?.has(member.name)) return
-      groupedMembers.addMember(member.name, this.collectMembersFromSymbol(member))
+      const memberToAdd = this.collectMembersFromSymbol(member, member.name)
+
+      if (memberToAdd) groupedMembers.addMember(memberToAdd)
     })
 
     return declarations
@@ -122,41 +149,42 @@ export class MemberParser {
         const inheritedMembers = this.collectMembersFromInterfaceOrTypeSymbol(
           inheritedSymbol,
           new Set(Object.keys(groupedMembers)),
+          memberName,
         )
 
         return groupedMembers.concat(inheritedMembers)
       }, groupedMembers)
   }
 
-  private collectMembersFromPropertySymbol(symbol: ts.Symbol): Member {
+  private collectMembersFromPropertySymbol(symbol: ts.Symbol): Member | undefined {
     const { name, valueDeclaration } = symbol
     if (!ts.isPropertySignature(valueDeclaration)) throw new Error('Not a property signature')
     if (!valueDeclaration.type) throw new Error('Value declaration does not have a type')
 
     switch (valueDeclaration.type.kind) {
       case ts.SyntaxKind.StringKeyword:
-        return MemberType.String
+        return new StringMember(name)
       case ts.SyntaxKind.NumberKeyword:
-        return MemberType.Number
+        return new NumberMember(name)
       case ts.SyntaxKind.BooleanKeyword:
-        return MemberType.Boolean
+        return new BooleanMember(name)
       case ts.SyntaxKind.UnionType:
-        return MemberType.Union
+        return new UnimplementedMember(name)
       case ts.SyntaxKind.ArrayType:
-        return MemberType.Array
+        return new ArrayMember(name)
       case ts.SyntaxKind.TypeLiteral:
       case ts.SyntaxKind.TypeReference: {
         const typeReferenceType = this.typeChecker.getTypeAtLocation(valueDeclaration.type)
-        if (typeReferenceType.symbol.flags === 33554497) return MemberType.BuiltIn
+        if (typeReferenceType.symbol.flags === 33554497) return new UnimplementedMember(name)
 
         if ([ts.SymbolFlags.Interface, ts.SymbolFlags.TypeLiteral].includes(typeReferenceType.symbol.flags))
-          return this.collectMembersFromInterfaceOrTypeSymbol(typeReferenceType.symbol)
+          return this.collectMembersFromInterfaceOrTypeSymbol(typeReferenceType.symbol, undefined, name)
 
         if (typeReferenceType.symbol.flags === ts.SymbolFlags.RegularEnum) {
           const firstEnumName = typeReferenceType.symbol.exports?.keys().next().value.toString()
           return firstEnumName
-            ? new EnumMember(typeReferenceType.symbol.name, firstEnumName)
-            : MemberType.Never
+            ? new EnumMember(name, typeReferenceType.symbol.name, firstEnumName)
+            : undefined
         }
 
         throw new Error(
@@ -211,24 +239,4 @@ export interface VariableInfo {
   lines: string[]
   start: Position
   end: Position
-}
-
-export class GroupedMembers {
-  public readonly members: Record<string, Member>
-
-  constructor(members?: Record<string, Member>) {
-    this.members = members ?? {}
-  }
-
-  public addMember(key: string, member: Member): void {
-    this.members[key] = member
-  }
-
-  public concat(groupedMembers: GroupedMembers): GroupedMembers {
-    return new GroupedMembers({ ...this.members, ...groupedMembers.members })
-  }
-}
-
-export class EnumMember {
-  constructor(public readonly enumName: string, public readonly member: string) {}
 }

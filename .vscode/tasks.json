@@ -4,13 +4,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "npm",
-      "script": "build",
-      "problemMatcher": "$tsc",
+      "type": "typescript",
+      "tsconfig": "tsconfig.json",
+      "problemMatcher": ["$tsc"],
       "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+        "isDefault": true,
+        "kind": "build"
+      },
+      "label": "tsc: build - tsconfig.json"
     }
   ]
 }

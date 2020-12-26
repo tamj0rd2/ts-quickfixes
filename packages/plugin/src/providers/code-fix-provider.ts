@@ -1,4 +1,3 @@
-import { LineEnding, MemberFormatter } from '../formatter'
 import { MemberParser } from '../member-parser'
 import { BaseProvider } from './provider'
 
@@ -38,9 +37,8 @@ export class CodeFixProvider extends BaseProvider {
     const program = this.getProgram()
     const memberParser = new MemberParser(program)
     const variableName = memberParser.getVariableNameAtLocation(start, end, fileName)
-    const members = memberParser.getMissingMembersForVariable(variableName, fileName)
     const variableInfo = memberParser.getVariableInfo(variableName, fileName)
-    const replacedVariable = new MemberFormatter().format(variableInfo.lines, members, LineEnding.LF)
+    const replacedVariable = memberParser.fillMissingMembers(variableName, fileName)
 
     return {
       fixName: 'implementMissingMembers',

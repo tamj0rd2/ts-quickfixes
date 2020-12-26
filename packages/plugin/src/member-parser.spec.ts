@@ -1,7 +1,23 @@
 import ts from 'typescript/lib/tsserverlibrary'
-import { EnumMember, GroupedMembers, MemberParser, MemberType, VariableInfo } from './member-parser'
+import { MemberParser, VariableInfo } from './member-parser'
 import _mockFs from 'mock-fs'
 import { resolve } from 'path'
+import { ObjectLiteralMember } from './members/object-literal-member'
+import {
+  ArrayMember,
+  BooleanMember,
+  EnumMember,
+  NumberMember,
+  StringMember,
+  UnimplementedMember,
+} from './members/simple-types'
+
+const LineEnding = {
+  LF: '\n',
+  CRLF: '\r\n',
+} as const
+
+type LineEnding = typeof LineEnding[keyof typeof LineEnding]
 
 describe('MemberParser', () => {
   afterEach(() => _mockFs.restore())
@@ -36,14 +52,17 @@ describe('MemberParser', () => {
       const members = memberParser.getMissingMembersForVariable('aPerson', tsFilePath)
 
       expect(members).toStrictEqual<typeof members>(
-        new GroupedMembers({
-          firstName: MemberType.String,
-          favouriteFilms: MemberType.Array,
-          birthday: MemberType.BuiltIn,
-          address: new GroupedMembers({ city: MemberType.String, postcode: MemberType.String }),
-          mobileNumber: new GroupedMembers({ countryCode: MemberType.String, phoneNumber: 0 }),
-          status: MemberType.Union,
-        }),
+        ObjectLiteralMember.createTopLevel([
+          new StringMember('firstName'),
+          new ArrayMember('favouriteFilms'),
+          new UnimplementedMember('birthday'),
+          new ObjectLiteralMember('address', [new StringMember('city'), new StringMember('postcode')]),
+          new ObjectLiteralMember('mobileNumber', [
+            new StringMember('countryCode'),
+            new NumberMember('phoneNumber'),
+          ]),
+          new UnimplementedMember('status'),
+        ]),
       )
     })
 
@@ -76,11 +95,14 @@ describe('MemberParser', () => {
       const members = memberParser.getMissingMembersForVariable('aPerson', tsFilePath)
 
       expect(members).toStrictEqual<typeof members>(
-        new GroupedMembers({
-          firstName: MemberType.String,
-          address: new GroupedMembers({ city: MemberType.String, postcode: MemberType.String }),
-          mobileNumber: new GroupedMembers({ countryCode: MemberType.String, phoneNumber: 0 }),
-        }),
+        ObjectLiteralMember.createTopLevel([
+          new StringMember('firstName'),
+          new ObjectLiteralMember('address', [new StringMember('city'), new StringMember('postcode')]),
+          new ObjectLiteralMember('mobileNumber', [
+            new StringMember('countryCode'),
+            new NumberMember('phoneNumber'),
+          ]),
+        ]),
       )
     })
 
@@ -107,7 +129,7 @@ describe('MemberParser', () => {
       const members = memberParser.getMissingMembersForVariable('person', tsFilePath)
 
       expect(members).toStrictEqual<typeof members>(
-        new GroupedMembers({ favouriteColour: new EnumMember('Colour', 'Orange') }),
+        ObjectLiteralMember.createTopLevel([new EnumMember('favouriteColour', 'Colour', 'Orange')]),
       )
     })
 
@@ -133,11 +155,11 @@ describe('MemberParser', () => {
         const members = memberParser.getMissingMembersForVariable('dog', filePath)
 
         expect(members).toStrictEqual<typeof members>(
-          new GroupedMembers({
-            age: MemberType.Number,
-            breed: MemberType.String,
-            hasLegs: MemberType.Boolean,
-          }),
+          ObjectLiteralMember.createTopLevel([
+            new StringMember('breed'),
+            new NumberMember('age'),
+            new BooleanMember('hasLegs'),
+          ]),
         )
       })
 
@@ -167,11 +189,11 @@ describe('MemberParser', () => {
         const members = memberParser.getMissingMembersForVariable('dog', filePath)
 
         expect(members).toStrictEqual<typeof members>(
-          new GroupedMembers({
-            age: MemberType.Number,
-            breed: MemberType.String,
-            hasLegs: MemberType.Boolean,
-          }),
+          ObjectLiteralMember.createTopLevel([
+            new StringMember('breed'),
+            new NumberMember('age'),
+            new BooleanMember('hasLegs'),
+          ]),
         )
       })
     })
@@ -261,6 +283,45 @@ describe('MemberParser', () => {
       expect(variableName).toEqual('myVariable')
     })
   })
+
+  describe('fillMissingMembers', () => {
+    it('fills in missing members when none are declared', () => {
+      const { createProgram, setupMockFiles } = createTestDeps()
+      const filePath = 'file.ts'
+      setupMockFiles({
+        [filePath]: `
+          type Person = { firstName: string; lastName: string }
+          export const myVariable: Person = {}`,
+      })
+
+      const memberParser = new MemberParser(createProgram(filePath))
+      const result = memberParser.fillMissingMembers('myVariable', filePath)
+
+      expect(result).toBe(`{ firstName: "", lastName: "" }`)
+    })
+
+    it('fills in missing members when some are declared', () => {
+      const { createProgram, setupMockFiles, trimOutput } = createTestDeps()
+      const filePath = 'file.ts'
+      setupMockFiles({
+        [filePath]: `
+          type Person = { firstName: string; lastName: string }
+          export const myVariable: Person = {
+            firstName: "Nick"
+          }`,
+      })
+
+      const memberParser = new MemberParser(createProgram(filePath))
+      const result = memberParser.fillMissingMembers('myVariable', filePath)
+
+      expect(trimOutput(result)).toBe(
+        trimOutput(`{
+          firstName: "Nick",
+          lastName: ""
+        }`),
+      )
+    })
+  })
 })
 
 function curryTestDeps() {
@@ -306,6 +367,11 @@ function curryTestDeps() {
       createImportStatement(name: string, fileToImportFrom: string) {
         return `import { ${name} } from './${fileToImportFrom.replace('.ts', '')}'`
       },
+      trimOutput: (output: string, lineEnding: LineEnding = LineEnding.LF) =>
+        output
+          .split(lineEnding)
+          .map((line) => line.trim())
+          .join(lineEnding),
     }
   }
 }
