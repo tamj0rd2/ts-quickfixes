@@ -42,3 +42,15 @@ tail -f ../ts-logs.txt | grep --line-buffered --color=always ts-quickfixes-plugi
 ```
 
 If you're able to see `Hello world!` in the output, the monitoring is working
+
+## Releasing
+
+The release of the plugin happens automatically via the CI pipeline. The extension
+should be updated/released manually for now.
+
+* Run `npm run setup` to trigger dependencies to be installed
+* If the plugin has had a recent release, the package-lock.json for the extension
+  should have pending changes in git. If not, something went wrong
+* Commit the changes as a feat (so that a new extension versions can be released)
+* Push the changes
+* Run `./publish.sh` to publish a new version of the extension

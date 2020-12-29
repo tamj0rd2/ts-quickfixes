@@ -6,6 +6,7 @@ async function main(): Promise<void> {
   try {
     // Download VS Code, unzip it and run the integration test
     await runTests({
+      version: 'stable',
       launchArgs: [TEST_ENV_DIR, '--disable-extensions'],
       // The folder containing the Extension Manifest package.json
       extensionDevelopmentPath: EXTENSION_ROOT_DIR,
