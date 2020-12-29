@@ -1,5 +1,6 @@
 {
   "packages": ["packages/extension", "packages/plugin", "packages/e2e"],
   "version": "independent",
-  "npmClient": "npm"
+  "npmClient": "npm",
+  "concurrency": 1
 }
