@@ -14,7 +14,7 @@ export abstract class BaseProvider {
   }
 }
 
-interface Logger {
+export interface Logger {
   info: (message: string | Record<string, unknown>) => void
   error: (message: string | Error) => void
 }

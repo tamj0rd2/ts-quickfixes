@@ -11,7 +11,15 @@
         "isDefault": true,
         "kind": "build"
       },
-      "label": "tsc: build - tsconfig.json"
+      "label": "tsc: build - tsconfig.json",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      }
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { MemberParser } from '../member-parser'
+import { MissingVariableMembersFix } from '../code-fixes/missing-variable-members-fix'
 import { BaseProvider } from './provider'
 
 export class CodeFixProvider extends BaseProvider {
@@ -11,14 +11,21 @@ export class CodeFixProvider extends BaseProvider {
     preferences: ts.UserPreferences,
   ): readonly ts.CodeFixAction[] => {
     this.logger.info('Trying to get code fix actions')
-    const codeFixArgs: CodeFixArgs = { fileName, start, end, errorCodes, formatOptions, preferences }
     const customActions: ts.CodeFixAction[] = []
 
-    if (errorCodes.some((code) => ERROR_CODES.implementMissingMembers.includes(code))) {
-      customActions.push(this.createImplementMissingMembersFix(codeFixArgs))
-    } else {
-      this.logger.info('no fixable error codes')
+    if (errorCodes.some(MissingVariableMembersFix.supportsErrorCode)) {
+      customActions.push(
+        new MissingVariableMembersFix({
+          start,
+          end,
+          filePath: fileName,
+          program: this.getProgram(),
+          logger: this.logger,
+        }),
+      )
     }
+
+    this.logger.info('Done trying to get code fix actions')
 
     return [
       ...this.originalLanguageService.getCodeFixesAtPosition(
@@ -32,44 +39,4 @@ export class CodeFixProvider extends BaseProvider {
       ...customActions,
     ]
   }
-
-  private createImplementMissingMembersFix({ start, end, fileName }: CodeFixArgs): ts.CodeFixAction {
-    const program = this.getProgram()
-    const memberParser = new MemberParser(program)
-    const variableName = memberParser.getVariableNameAtLocation(start, end, fileName)
-    const variableInfo = memberParser.getVariableInfo(variableName, fileName)
-    const replacedVariable = memberParser.fillMissingMembers(variableName, fileName)
-
-    return {
-      fixName: 'implementMissingMembers',
-      description: 'Implement missing members',
-      changes: [
-        {
-          fileName,
-          textChanges: [
-            {
-              newText: replacedVariable,
-              span: {
-                start: variableInfo.start.pos + 1,
-                length: variableInfo.end.pos - variableInfo.start.pos - 1,
-              },
-            },
-          ],
-        },
-      ],
-    }
-  }
-}
-
-const ERROR_CODES = {
-  implementMissingMembers: [2739, 2740, 2741],
-}
-
-interface CodeFixArgs {
-  fileName: string
-  start: number
-  end: number
-  errorCodes: readonly number[]
-  formatOptions: ts.FormatCodeSettings
-  preferences: ts.UserPreferences
 }
