@@ -2,9 +2,9 @@
 
 ## Features
 
-### Implement missing object members
+### Declare missing object members
 
-![Implement missing object members](gifs/implement-missing-members.gif)
+![Declare missing object members](gifs/implement-missing-members.gif)
 
 ## Requirements
 

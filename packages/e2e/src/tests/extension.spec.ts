@@ -13,7 +13,7 @@ describe('Acceptance tests', () => {
     void vscode.window.showInformationMessage('Starting acceptance tests')
   })
 
-  describe('Implement missing members', () => {
+  describe('Declare missing members', () => {
     const happyPathCases = [
       ['implements all object members when all of them were missing', 'aPerson'],
       ['only implements missing members if some members are already defined', 'personWithOneProperty'],
@@ -23,12 +23,13 @@ describe('Acceptance tests', () => {
     ]
 
     it.each(happyPathCases)('%s', async (_, variableName) => {
-      const { testFileUri, getCodeActionsForVariable } = createTestDeps()
+      const { getCodeActions } = createTestDeps()
+      const testFileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 
-      const codeActions = await getCodeActionsForVariable(testingDocument, variableName)
-      expect(codeActions[0].title).toStrictEqual('Implement missing members')
+      const codeActions = await getCodeActions(testingDocument, `const ${variableName}`)
+      expect(codeActions[0].title).toStrictEqual('Declare missing members')
       await vscode.workspace.applyEdit(codeActions[0].edit!)
 
       const variableValue = getVariableValue(getAllDocumentText(testingDocument), variableName)
@@ -38,12 +39,12 @@ describe('Acceptance tests', () => {
 })
 
 function createTestDeps() {
-  const getCodeActionsForVariable = (
+  const getCodeActions = (
     document: vscode.TextDocument,
-    variableName: string,
+    textToSearchFor: string,
   ): Promise<vscode.CodeAction[]> => {
-    const variableLine = getLineByText(document, `const ${variableName}`)
-    const charNumber = variableLine.text.indexOf(variableName)
+    const line = getLineByText(document, textToSearchFor)
+    const charNumber = line.text.indexOf(textToSearchFor)
 
     return waitForResponse(
       async () =>
@@ -51,16 +52,16 @@ function createTestDeps() {
           'vscode.executeCodeActionProvider',
           document.uri,
           new vscode.Range(
-            variableLine.range.start.translate(0, charNumber),
-            variableLine.range.start.translate(0, charNumber + variableName.length),
+            line.range.start.translate(0, charNumber),
+            line.range.start.translate(0, charNumber + textToSearchFor.length),
           ),
         ),
       (response) => !!response?.length,
+      'No code actions available',
     )
   }
 
   return {
-    testFileUri: vscode.Uri.file(TEST_ENV_DIR + '/testing.ts'),
-    getCodeActionsForVariable,
+    getCodeActions,
   }
 }

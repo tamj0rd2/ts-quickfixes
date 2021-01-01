@@ -16,5 +16,5 @@
     "inlineSourceMap": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "lib"]
+  "exclude": ["node_modules", "**/.*"]
 }

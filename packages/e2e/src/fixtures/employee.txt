@@ -1,15 +1,15 @@
 {
-  department: 'todo',
-  firstName: 'todo',
-  lastName: 'todo',
-  birthday: null,
-  address: {
-    city: 'todo',
-    postcode: 'todo',
-  },
-  mobileNumber: {
-    countryCode: 'todo',
-    phoneNumber: 0,
-  },
-  status: null,
+    department: 'todo',
+    firstName: 'todo',
+    lastName: 'todo',
+    birthday: new Date(),
+    address: {
+        city: 'todo',
+        postcode: 'todo'
+    },
+    mobileNumber: {
+        countryCode: 'todo',
+        phoneNumber: 0
+    },
+    status: null
 }

@@ -32,6 +32,7 @@ export async function waitUntil(predicate: () => boolean | Promise<boolean>, tim
 export async function waitForResponse<T, Res extends T>(
   getResponse: () => T | Promise<T>,
   predicate: (response: T) => boolean,
+  message?: string,
   timeout = 5,
 ): Promise<Res> {
   for (let attempt = 0; attempt < timeout; attempt++) {
@@ -39,7 +40,8 @@ export async function waitForResponse<T, Res extends T>(
     if (predicate(response)) return response as Res
     await wait(1)
   }
-  throw new Error('tryGetResponse timeout exceeded')
+
+  throw new Error(message ?? 'tryGetResponse timeout exceeded')
 }
 
 export function getVariableValue(textToSearch: string, variableName: string): string {

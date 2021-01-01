@@ -1,5 +1,5 @@
 {
-  breed: DogBreed.Beagle,
-  hasLegs: false,
-  age: 0,
+    breed: DogBreed.Beagle,
+    hasLegs: false,
+    age: 0
 }
