@@ -17,3 +17,6 @@ test-environment/**
 .nvmrc
 .releaserc
 prettier.config.js
+*.vsix
+scripts
+tsconfig.tools.json

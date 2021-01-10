@@ -3,7 +3,7 @@
   "private": true,
   "displayName": "TS QuickFixes",
   "description": "Quick fixes for typescript",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "license": "MIT",
   "publisher": "tamj0rd2",
   "engines": {
@@ -31,7 +31,8 @@
   },
   "scripts": {
     "shipit": "./scripts/shipit.sh",
-    "vscePublish": "vsce publish --yarn $(jq -r .version ./package.json)",
+    "vsce:package": "vsce package -o extension.vsix",
+    "vsce:publish": "vsce publish --packagePath extension.vsix",
     "test": "echo WARNING: there are no tests in the extension package yet"
   },
   "config": {
