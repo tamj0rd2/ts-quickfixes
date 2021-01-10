@@ -17,6 +17,3 @@ test-environment/**
 .nvmrc
 .releaserc
 prettier.config.js
-node_modules
-scripts/
-jest.config.js
