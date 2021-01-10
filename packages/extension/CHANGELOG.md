@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.4.4](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.4.3...ts-quickfixes-extension-v1.4.4) (2021-01-10)
+
+
+### Bug Fixes
+
+* package and then publish the extension ([4959720](https://github.com/tamj0rd2/ts-quickfixes/commit/49597200d5eecfc33b79847a4170ebc80b22a597))
+
 # [ts-quickfixes-extension-v1.4.3](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.4.2...ts-quickfixes-extension-v1.4.3) (2021-01-10)
 
 
