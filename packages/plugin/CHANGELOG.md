@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.4.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.3.0...ts-quickfixes-plugin-v1.4.0) (2021-01-10)
+
+
+### Features
+
+* **plugin:** implement missing function argument members ([cc082a7](https://github.com/tamj0rd2/ts-quickfixes/commit/cc082a7a9252a8cbe8cd074689d40d96109f7bdf)), closes [#6](https://github.com/tamj0rd2/ts-quickfixes/issues/6)
+
 # [ts-quickfixes-plugin-v1.3.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.2.0...ts-quickfixes-plugin-v1.3.0) (2020-12-19)
 
 
