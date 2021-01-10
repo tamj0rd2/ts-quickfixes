@@ -1,4 +1,3 @@
-import ts from 'typescript/lib/tsserverlibrary'
 import { CodeFix, CodeFixArgs, ObjectDeclarationLike } from './fix'
 
 interface MissingArgumentMembersArgs extends CodeFixArgs {
@@ -24,17 +23,17 @@ export class MissingArgumentMembersFix extends CodeFix {
     const { value, expectedType } = this.getArgumentInfo(sourceFile, args)
     const undeclaredMembers = this.getUndeclaredMemberSymbols(value, expectedType)
 
-    const replacedInitializer = ts.factory.createObjectLiteralExpression(
+    const replacedInitializer = this.ts.factory.createObjectLiteralExpression(
       [...value.properties, ...undeclaredMembers.map(this.createMemberForSymbol)],
       false,
     )
 
-    const newText = ts
+    const newText = this.ts
       .createPrinter(
-        { newLine: ts.NewLineKind.LineFeed },
+        { newLine: this.ts.NewLineKind.LineFeed },
         { substituteNode: (_, node) => (node === value ? replacedInitializer : node) },
       )
-      .printNode(ts.EmitHint.Unspecified, value, sourceFile)
+      .printNode(this.ts.EmitHint.Unspecified, value, sourceFile)
 
     this.changes = [
       {
@@ -58,17 +57,20 @@ export class MissingArgumentMembersFix extends CodeFix {
     const argumentValue = this.findChildNode(
       sourceFile,
       (node): node is ts.ObjectLiteralExpression =>
-        matchesPosition(node) && ts.isObjectLiteralExpression(node),
+        matchesPosition(node) && this.ts.isObjectLiteralExpression(node),
     )
 
-    const callExpression = this.findParentNode(argumentValue, ts.isCallExpression)
+    const callExpression = this.findParentNode(argumentValue, this.ts.isCallExpression)
     const argumentIndex = callExpression.arguments.findIndex((arg) => arg === argumentValue)
     if (argumentIndex < 0) {
       TODO('Invalid argument index')
     }
 
     const { symbol: identifierSymbol } = this.typeChecker.getTypeAtLocation(callExpression.expression)
-    if (!identifierSymbol.valueDeclaration || !ts.isFunctionDeclaration(identifierSymbol.valueDeclaration)) {
+    if (
+      !identifierSymbol.valueDeclaration ||
+      !this.ts.isFunctionDeclaration(identifierSymbol.valueDeclaration)
+    ) {
       TODO('no value declaration')
     }
 
@@ -83,7 +85,7 @@ export class MissingArgumentMembersFix extends CodeFix {
       return { value: argumentValue, expectedType }
     }
 
-    if (ts.isTypeReferenceNode(expectedType) && ts.isIdentifier(expectedType.typeName)) {
+    if (this.ts.isTypeReferenceNode(expectedType) && this.ts.isIdentifier(expectedType.typeName)) {
       return { value: argumentValue, expectedType: this.getTypeByIdentifier(expectedType.typeName) }
     }
 

@@ -24,6 +24,7 @@ describe('missing variable members fix', () => {
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
       const fix = new MissingVariableMembersFix({
+        ts,
         filePath,
         program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
         logger: createDummyLogger(),
@@ -61,6 +62,7 @@ describe('missing variable members fix', () => {
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
       const fix = new MissingVariableMembersFix({
+        ts,
         filePath,
         program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
         logger: createDummyLogger(),
@@ -105,6 +107,7 @@ describe('missing variable members fix', () => {
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
       const fix = new MissingVariableMembersFix({
+        ts,
         filePath,
         program: createTestProgram(
           [filePath, inheritedFilePath],
@@ -151,6 +154,7 @@ describe('missing variable members fix', () => {
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
       const fix = new MissingVariableMembersFix({
+        ts,
         filePath,
         program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
         logger: createDummyLogger(),
@@ -191,6 +195,7 @@ describe('missing variable members fix', () => {
 
         const errorLocation = getNodeRange(fileContent, 'targetVariable')
         const fix = new MissingVariableMembersFix({
+          ts,
           filePath,
           program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
           logger: createDummyLogger(),
@@ -236,6 +241,7 @@ describe('missing variable members fix', () => {
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
       const fix = new MissingVariableMembersFix({
+        ts,
         filePath,
         program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
         logger: createDummyLogger(),
@@ -270,6 +276,7 @@ describe('missing variable members fix', () => {
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
       const fix = new MissingVariableMembersFix({
+        ts,
         filePath,
         program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
         logger: createDummyLogger(),
@@ -302,6 +309,7 @@ describe('missing variable members fix', () => {
 
       const errorLocation = getNodeRange(targetFileContent, 'targetVariable')
       const fix = new MissingVariableMembersFix({
+        ts,
         filePath: targetFilePath,
         program: createTestProgram(FsMocker.fileNames, MissingVariableMembersFix.supportedErrorCodes),
         logger: createDummyLogger(),

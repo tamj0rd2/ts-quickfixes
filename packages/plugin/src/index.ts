@@ -1,6 +1,5 @@
 import { CodeFixProvider } from './providers'
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function init(modules: Modules): { create: CreateFn } {
   function create(info: ts.server.PluginCreateInfo): ts.LanguageService {
     const originalLanguageService = info.languageService
@@ -38,7 +37,7 @@ function init(modules: Modules): { create: CreateFn } {
     return {
       ...originalLanguageService,
       getCodeFixesAtPosition: logOnError(
-        new CodeFixProvider(originalLanguageService, logger).getCodeFixesAtPosition,
+        new CodeFixProvider(originalLanguageService, logger, modules.typescript).getCodeFixesAtPosition,
       ),
     }
   }

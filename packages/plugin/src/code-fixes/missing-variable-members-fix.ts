@@ -1,4 +1,3 @@
-import ts from 'typescript/lib/tsserverlibrary'
 import { CodeFix, CodeFixArgs, NodeRange, ObjectDeclarationLike } from './fix'
 
 export interface MissingVariableMembersArgs extends CodeFixArgs {
@@ -24,17 +23,17 @@ export class MissingVariableMembersFix extends CodeFix {
     const sourceFile = this.getSourceFile(args.filePath)
     const { initializer, type } = this.getVariableInfo(sourceFile, args)
     const undeclaredMembers = this.getUndeclaredMemberSymbols(initializer, type)
-    const replacedInitializer = ts.factory.createObjectLiteralExpression(
+    const replacedInitializer = this.ts.factory.createObjectLiteralExpression(
       [...initializer.properties, ...undeclaredMembers.map(this.createMemberForSymbol)],
       true,
     )
 
-    const newText = ts
+    const newText = this.ts
       .createPrinter(
-        { newLine: ts.NewLineKind.LineFeed },
+        { newLine: this.ts.NewLineKind.LineFeed },
         { substituteNode: (_, node) => (node === initializer ? replacedInitializer : node) },
       )
-      .printNode(ts.EmitHint.Unspecified, initializer, sourceFile)
+      .printNode(this.ts.EmitHint.Unspecified, initializer, sourceFile)
 
     this.changes = [
       {
@@ -57,20 +56,23 @@ export class MissingVariableMembersFix extends CodeFix {
     const matchesPosition = this.curryMatchesPosition(sourceFile, { start, end })
     const identifier = this.findChildNode(
       sourceFile,
-      (node): node is ts.Identifier => matchesPosition(node) && ts.isIdentifier(node),
+      (node): node is ts.Identifier => matchesPosition(node) && this.ts.isIdentifier(node),
       `Could not find a node at pos ${start}:${end}`,
     )
-    const { initializer, type: typeReference } = this.findParentNode(identifier, ts.isVariableDeclaration)
+    const { initializer, type: typeReference } = this.findParentNode(
+      identifier,
+      this.ts.isVariableDeclaration,
+    )
 
-    if (!initializer || !ts.isObjectLiteralExpression(initializer)) {
+    if (!initializer || !this.ts.isObjectLiteralExpression(initializer)) {
       throw new Error('No initializer for the given variable')
     }
 
-    if (!typeReference || !ts.isTypeReferenceNode(typeReference)) {
+    if (!typeReference || !this.ts.isTypeReferenceNode(typeReference)) {
       throw new Error('No type reference for the given variable')
     }
 
-    if (!ts.isIdentifier(typeReference.typeName)) {
+    if (!this.ts.isIdentifier(typeReference.typeName)) {
       throw new Error('Type reference does not have an identifier on it')
     }
 

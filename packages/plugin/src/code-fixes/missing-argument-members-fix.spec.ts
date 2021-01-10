@@ -1,3 +1,4 @@
+import ts from 'typescript/lib/tsserverlibrary'
 import { MissingArgumentMembersFix } from './missing-argument-members-fix'
 import { createDummyLogger, createTestProgram, FsMocker, getNodeRange } from '../test-helpers'
 
@@ -16,6 +17,7 @@ describe('Fill Missing Argument Member', () => {
     const initializerLocation = getNodeRange(fileContent, argumentValue)
     const fix = new MissingArgumentMembersFix({
       filePath,
+      ts,
       program: createTestProgram([filePath], MissingArgumentMembersFix.supportedErrorCodes),
       logger: createDummyLogger(),
       ...initializerLocation,
@@ -47,6 +49,7 @@ describe('Fill Missing Argument Member', () => {
     const initializerLocation = getNodeRange(fileContent, argumentValue)
     const fix = new MissingArgumentMembersFix({
       filePath,
+      ts,
       program: createTestProgram([filePath], MissingArgumentMembersFix.supportedErrorCodes),
       logger: createDummyLogger(),
       ...initializerLocation,
@@ -82,6 +85,7 @@ describe('Fill Missing Argument Member', () => {
     const initializerLocation = getNodeRange(fileContent, argumentValue)
     const fix = new MissingArgumentMembersFix({
       filePath,
+      ts,
       program: createTestProgram([filePath], MissingArgumentMembersFix.supportedErrorCodes),
       logger: createDummyLogger(),
       ...initializerLocation,

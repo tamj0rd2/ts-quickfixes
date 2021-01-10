@@ -2,6 +2,7 @@ export abstract class BaseProvider {
   constructor(
     protected readonly originalLanguageService: ts.LanguageService,
     protected readonly logger: Logger,
+    protected readonly ts: typeof import('typescript/lib/tsserverlibrary'),
   ) {}
 
   protected getProgram(): ts.Program {

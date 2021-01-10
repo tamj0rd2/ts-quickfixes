@@ -62,6 +62,7 @@ module.exports = {
     ],
     '@typescript-eslint/require-await': 'error',
     '@typescript-eslint/no-floating-promises': 'error',
+    'no-restricted-imports': ['error', 'typescript/lib/tsserverlibrary'],
   },
   overrides: [
     {
@@ -71,10 +72,11 @@ module.exports = {
       },
     },
     {
-      files: ['**/*.test.ts', '**/*.spec.ts'],
+      files: ['**/*.test.ts', '**/*.spec.ts', '**/test-helpers*.ts'],
       rules: {
         '@typescript-eslint/no-non-null-assertion': 'off',
         '@typescript-eslint/explicit-function-return-type': 'off',
+        'no-restricted-imports': 'off',
       },
     },
   ],

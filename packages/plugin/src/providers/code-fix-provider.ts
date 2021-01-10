@@ -26,6 +26,7 @@ export class CodeFixProvider extends BaseProvider {
       tryAddFixAction(
         () =>
           new MissingVariableMembersFix({
+            ts: this.ts,
             start,
             end,
             filePath: fileName,
@@ -39,6 +40,7 @@ export class CodeFixProvider extends BaseProvider {
       tryAddFixAction(
         () =>
           new MissingArgumentMembersFix({
+            ts: this.ts,
             start,
             end,
             filePath: fileName,
@@ -61,13 +63,5 @@ export class CodeFixProvider extends BaseProvider {
       ),
       ...customActions,
     ]
-  }
-
-  private tryAddFix(fixes: ts.CodeFixAction[], fixFactory: () => ts.CodeFixAction): void {
-    try {
-      fixes.push(fixFactory())
-    } catch (err) {
-      this.logger.error(err)
-    }
   }
 }

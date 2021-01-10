@@ -1,10 +1,12 @@
-import ts from 'typescript/lib/tsserverlibrary'
 import { Logger } from '../providers/provider'
 import { MissingVariableMembersArgs } from './missing-variable-members-fix'
+
+export type ts = typeof import('typescript/lib/tsserverlibrary')
 
 export interface CodeFixArgs {
   program: ts.Program
   logger: Logger
+  ts: ts
 }
 
 export abstract class CodeFix implements ts.CodeFixAction {
@@ -12,12 +14,14 @@ export abstract class CodeFix implements ts.CodeFixAction {
   public abstract readonly description: string
   public abstract readonly changes: ts.FileTextChanges[]
 
+  protected readonly ts: ts
   protected readonly program: ts.Program
   protected readonly typeChecker: ts.TypeChecker
   protected readonly logger: Logger
   private readonly formattingOpts = { useSingleQuotes: true }
 
   constructor(args: CodeFixArgs) {
+    this.ts = args.ts
     this.program = args.program
     this.typeChecker = args.program.getTypeChecker()
     this.logger = args.logger
@@ -87,10 +91,10 @@ export abstract class CodeFix implements ts.CodeFixAction {
     const expectedMembers: ts.Symbol[] = []
     symbol.members?.forEach((member) => expectedMembers.push(member))
 
-    if (ts.isInterfaceDeclaration(node)) {
+    if (this.ts.isInterfaceDeclaration(node)) {
       const inheritedMemberSymbols = node.heritageClauses
         ?.flatMap((clause) => clause.types.map((type) => type.expression))
-        .filter(ts.isIdentifier)
+        .filter(this.ts.isIdentifier)
         .map(this.getTypeByIdentifier)
         .flatMap(this.getExpectedMemberSymbols)
 
@@ -103,7 +107,7 @@ export abstract class CodeFix implements ts.CodeFixAction {
   }
 
   protected isObjectDeclarationLike = (node: ts.Node | undefined): node is ObjectDeclarationLike => {
-    return !!node && (ts.isTypeLiteralNode(node) || ts.isInterfaceDeclaration(node))
+    return !!node && (this.ts.isTypeLiteralNode(node) || this.ts.isInterfaceDeclaration(node))
   }
 
   protected getTypeByIdentifier = (identifier: ts.Identifier): ObjectDeclarationLike => {
@@ -119,70 +123,73 @@ export abstract class CodeFix implements ts.CodeFixAction {
   protected createMemberForSymbol = (memberSymbol: ts.Symbol): ts.PropertyAssignment => {
     const createInitializer = (memberSymbol: ts.Symbol): ts.Expression => {
       const propertySignature = memberSymbol.valueDeclaration
-      if (!ts.isPropertySignature(propertySignature))
+      if (!this.ts.isPropertySignature(propertySignature))
         throw new Error('The given symbol is not a property signature')
 
-      if (propertySignature.type && ts.isLiteralTypeNode(propertySignature.type)) {
-        if (propertySignature.type.literal.kind === ts.SyntaxKind.TrueKeyword) {
-          return ts.factory.createTrue()
+      if (propertySignature.type && this.ts.isLiteralTypeNode(propertySignature.type)) {
+        if (propertySignature.type.literal.kind === this.ts.SyntaxKind.TrueKeyword) {
+          return this.ts.factory.createTrue()
         }
 
-        if (propertySignature.type.literal.kind === ts.SyntaxKind.FalseKeyword) {
-          return ts.factory.createFalse()
+        if (propertySignature.type.literal.kind === this.ts.SyntaxKind.FalseKeyword) {
+          return this.ts.factory.createFalse()
         }
       }
 
-      if (propertySignature.type && ts.isArrayTypeNode(propertySignature.type)) {
-        return ts.factory.createArrayLiteralExpression()
+      if (propertySignature.type && this.ts.isArrayTypeNode(propertySignature.type)) {
+        return this.ts.factory.createArrayLiteralExpression()
       }
 
-      if (propertySignature.type && ts.isArrayTypeNode(propertySignature.type)) {
-        return ts.factory.createArrayLiteralExpression()
+      if (propertySignature.type && this.ts.isArrayTypeNode(propertySignature.type)) {
+        return this.ts.factory.createArrayLiteralExpression()
       }
 
       const type = this.typeChecker.getTypeAtLocation(propertySignature)
 
-      if (type.flags & ts.TypeFlags.String) {
-        return ts.factory.createStringLiteral('todo', this.formattingOpts.useSingleQuotes)
+      if (type.flags & this.ts.TypeFlags.String) {
+        return this.ts.factory.createStringLiteral('todo', this.formattingOpts.useSingleQuotes)
       }
 
-      if (type.flags & ts.TypeFlags.Number) {
-        return ts.factory.createNumericLiteral(0)
+      if (type.flags & this.ts.TypeFlags.Number) {
+        return this.ts.factory.createNumericLiteral(0)
       }
 
-      if (type.flags & ts.TypeFlags.Boolean) {
-        return ts.factory.createFalse()
+      if (type.flags & this.ts.TypeFlags.Boolean) {
+        return this.ts.factory.createFalse()
       }
 
-      if (type.flags & ts.TypeFlags.EnumLiteral && type.isUnionOrIntersection() && type.aliasSymbol) {
+      if (type.flags & this.ts.TypeFlags.EnumLiteral && type.isUnionOrIntersection() && type.aliasSymbol) {
         const firstEnumMember = type.aliasSymbol.exports?.keys().next().value.toString()
 
         return firstEnumMember
-          ? ts.factory.createPropertyAccessExpression(
-              ts.factory.createIdentifier(type.aliasSymbol.name),
-              ts.factory.createIdentifier(firstEnumMember),
+          ? this.ts.factory.createPropertyAccessExpression(
+              this.ts.factory.createIdentifier(type.aliasSymbol.name),
+              this.ts.factory.createIdentifier(firstEnumMember),
             )
-          : ts.factory.createNull()
+          : this.ts.factory.createNull()
       }
 
       const typeDeclaration = type.getSymbol()?.valueDeclaration ?? type.getSymbol()?.declarations[0]
       if (
         typeDeclaration &&
-        (ts.isTypeLiteralNode(typeDeclaration) || ts.isInterfaceDeclaration(typeDeclaration))
+        (this.ts.isTypeLiteralNode(typeDeclaration) || this.ts.isInterfaceDeclaration(typeDeclaration))
       ) {
         const memberSymbols = this.getExpectedMemberSymbols(typeDeclaration)
-        return ts.factory.createObjectLiteralExpression(memberSymbols.map(this.createMemberForSymbol), true)
+        return this.ts.factory.createObjectLiteralExpression(
+          memberSymbols.map(this.createMemberForSymbol),
+          true,
+        )
       }
 
       if (type.getSymbol()?.name === 'Date') {
-        return ts.factory.createNewExpression(ts.factory.createIdentifier('Date'), undefined, [])
+        return this.ts.factory.createNewExpression(this.ts.factory.createIdentifier('Date'), undefined, [])
       }
 
-      return ts.factory.createNull()
+      return this.ts.factory.createNull()
     }
 
-    return ts.factory.createPropertyAssignment(
-      ts.factory.createIdentifier(memberSymbol.name),
+    return this.ts.factory.createPropertyAssignment(
+      this.ts.factory.createIdentifier(memberSymbol.name),
       createInitializer(memberSymbol),
     )
   }
