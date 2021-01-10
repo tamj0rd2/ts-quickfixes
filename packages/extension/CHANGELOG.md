@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.4.2](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.4.1...ts-quickfixes-extension-v1.4.2) (2021-01-10)
+
+
+### Bug Fixes
+
+* **extension:** bump plugin version fixing ts incompatabilities ([496665d](https://github.com/tamj0rd2/ts-quickfixes/commit/496665d3f71bfaf69eb65e45ff77cbceace551bc))
+
 # [ts-quickfixes-extension-v1.4.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.4.0...ts-quickfixes-extension-v1.4.1) (2021-01-10)
 
 
