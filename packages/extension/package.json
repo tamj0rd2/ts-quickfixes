@@ -3,7 +3,7 @@
   "private": true,
   "displayName": "TS QuickFixes",
   "description": "Quick fixes for typescript",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "license": "MIT",
   "publisher": "tamj0rd2",
   "engines": {

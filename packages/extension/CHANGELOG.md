@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.4.3](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.4.2...ts-quickfixes-extension-v1.4.3) (2021-01-10)
+
+
+### Bug Fixes
+
+* **extension:** unignore node modules ([1d626a1](https://github.com/tamj0rd2/ts-quickfixes/commit/1d626a10516d9f5d79ea9154c15d853d047cb59f))
+
 # [ts-quickfixes-extension-v1.4.2](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.4.1...ts-quickfixes-extension-v1.4.2) (2021-01-10)
 
 
