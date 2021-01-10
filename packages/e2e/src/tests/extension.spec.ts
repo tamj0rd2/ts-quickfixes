@@ -15,11 +15,11 @@ describe('Acceptance tests', () => {
 
   describe('Declare missing members', () => {
     const happyPathCases = [
-      ['implements all object members when all of them were missing', 'aPerson'],
-      ['only implements missing members if some members are already defined', 'personWithOneProperty'],
-      ['implements missing members for objects that have been defined on a single line', 'singleLinePerson'],
-      ['implements missing members for interfaces that have been extended', 'employee'],
-      ['implements missing members for interfaces that have been extended from other files', 'dog'],
+      ['declares all object members when all of them were missing', 'aPerson'],
+      ['only declares missing members if some members are already defined', 'personWithOneProperty'],
+      ['declares missing members for objects that have been defined on a single line', 'singleLinePerson'],
+      ['declares missing members for interfaces that have been extended', 'employee'],
+      ['declares missing members for interfaces that have been extended from other files', 'dog'],
     ]
 
     it.each(happyPathCases)('%s', async (_, variableName) => {
@@ -34,6 +34,25 @@ describe('Acceptance tests', () => {
 
       const variableValue = getVariableValue(getAllDocumentText(testingDocument), variableName)
       expect(variableValue).toStrictEqual(await readFixture(variableName))
+    })
+  })
+
+  describe('Declare missing argument members', () => {
+    it('declares missing members for function arguments', async () => {
+      const { getCodeActions } = createTestDeps()
+      const fileUri = vscode.Uri.file(TEST_ENV_DIR + '/inline-declarations.ts')
+      const document = await vscode.workspace.openTextDocument(fileUri)
+      await vscode.window.showTextDocument(document)
+
+      const argumentValue = '{ balance: 200 }'
+      const codeActions = await getCodeActions(document, argumentValue)
+      expect(codeActions[0].title).toStrictEqual('Declare missing argument members')
+      await vscode.workspace.applyEdit(codeActions[0].edit!)
+
+      const documentText = getAllDocumentText(document)
+      expect(documentText).toContain(
+        `export const newBalance = withdrawMoney({ balance: 200, accountNumber: 'todo', sortCode: 'todo', blah: 'todo', something: new Date(), else: false }, 123)`,
+      )
     })
   })
 })

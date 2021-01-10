@@ -1,3 +1,4 @@
+import { MissingArgumentMembersFix } from '../code-fixes/missing-argument-members-fix'
 import { MissingVariableMembersFix } from '../code-fixes/missing-variable-members-fix'
 import { BaseProvider } from './provider'
 
@@ -13,15 +14,37 @@ export class CodeFixProvider extends BaseProvider {
     this.logger.info('Trying to get code fix actions')
     const customActions: ts.CodeFixAction[] = []
 
+    const tryAddFixAction = (fixFactory: () => ts.CodeFixAction): void => {
+      try {
+        customActions.push(fixFactory())
+      } catch (err) {
+        this.logger.error(err)
+      }
+    }
+
     if (errorCodes.some(MissingVariableMembersFix.supportsErrorCode)) {
-      customActions.push(
-        new MissingVariableMembersFix({
-          start,
-          end,
-          filePath: fileName,
-          program: this.getProgram(),
-          logger: this.logger,
-        }),
+      tryAddFixAction(
+        () =>
+          new MissingVariableMembersFix({
+            start,
+            end,
+            filePath: fileName,
+            program: this.getProgram(),
+            logger: this.logger,
+          }),
+      )
+    }
+
+    if (errorCodes.some(MissingArgumentMembersFix.supportsErrorCode)) {
+      tryAddFixAction(
+        () =>
+          new MissingArgumentMembersFix({
+            start,
+            end,
+            filePath: fileName,
+            program: this.getProgram(),
+            logger: this.logger,
+          }),
       )
     }
 
@@ -38,5 +61,13 @@ export class CodeFixProvider extends BaseProvider {
       ),
       ...customActions,
     ]
+  }
+
+  private tryAddFix(fixes: ts.CodeFixAction[], fixFactory: () => ts.CodeFixAction): void {
+    try {
+      fixes.push(fixFactory())
+    } catch (err) {
+      this.logger.error(err)
+    }
   }
 }
