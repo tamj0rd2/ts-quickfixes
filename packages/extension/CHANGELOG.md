@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.4.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.4.0...ts-quickfixes-extension-v1.4.1) (2021-01-10)
+
+
+### Bug Fixes
+
+* **plugin:** use the version of typescript provided by lanauge server ([2d6ca6a](https://github.com/tamj0rd2/ts-quickfixes/commit/2d6ca6ae50592b7eaa524b274c01fc9ed98238af))
+
 # [ts-quickfixes-extension-v1.4.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.3.0...ts-quickfixes-extension-v1.4.0) (2021-01-10)
 
 
