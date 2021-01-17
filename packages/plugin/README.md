@@ -6,6 +6,10 @@
 
 ![Declare missing object members](gifs/implement-missing-members.gif)
 
+### Declare missing (object) argument members
+
+![Declare missing (object) argument members](gifs/implement-missing-members.gif)
+
 ## Requirements
 
 N/A
@@ -27,14 +31,18 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-I've only covered a few use cases/scenarios. if your use case is not covered,
+I've only covered a few use cases/scenarios. If your use case is not covered,
 please open a github issue.
+
+### Formatting
+
+This extension/plugin won't do any formatting of generated code. You should
+enable an editor option like `formatOnSave` or run a linter to fix the formatting
+for you.
 
 ## Release Notes
 
-See the extension changelog [here](https://github.com/tamj0rd2/ts-quickfixes/blob/master/packages/extension/CHANGELOG.md)
-
-See the plugin changelog [here](./CHANGELOG.md)
+See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Contributing
 
