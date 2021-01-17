@@ -1,26 +1,4 @@
-import { Animal } from './another-file'
-
-interface PhoneNumber {
-  countryCode: string
-  phoneNumber: number
-}
-
-interface Person {
-  firstName: string
-  lastName: string
-  birthday: Date
-  address: { city: string; postcode: string }
-  mobileNumber: PhoneNumber
-  status: 'Alive' | 'Dead'
-}
-
-export const aPerson: Person = {}
-
-export const personWithOneProperty: Person = {
-  lastName: 'my last name',
-}
-
-export const singleLinePerson: Person = { birthday: new Date(), status: 'Alive' }
+import { Person } from './another-file'
 
 interface Employee extends Person {
   department: string
@@ -28,14 +6,15 @@ interface Employee extends Person {
 
 export const employee: Employee = {}
 
-enum DogBreed {
-  Beagle,
-  GoldenRetriever,
-  Labrador,
+interface Account {
+  accountNumber: string
+  sortCode: string
+  balance: number
 }
 
-interface Dog extends Animal {
-  breed: DogBreed
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function withdrawMoney(account: Account, amount: number): number {
+  return 0
 }
 
-export const dog: Dog = {}
+export const newBalance = withdrawMoney({ balance: 200 }, 123)
