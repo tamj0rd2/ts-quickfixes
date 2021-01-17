@@ -8,7 +8,7 @@
 
 ### Declare missing (object) argument members
 
-![Declare missing (object) argument members](gifs/implement-missing-members.gif)
+![Declare missing (object) argument members](gifs/declare-missing-argument-members.gif)
 
 ## Requirements
 

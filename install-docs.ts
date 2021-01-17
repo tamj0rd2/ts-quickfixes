@@ -1,4 +1,5 @@
 import { readFileSync, copySync, writeFileSync } from 'fs-extra'
+import { spawn } from 'child_process'
 
 // TODO: revisit this. Copy pasting the gif feels really wrong
 ;(function installDocs() {
@@ -18,5 +19,14 @@ import { readFileSync, copySync, writeFileSync } from 'fs-extra'
     copySync(`${rootDir}/gifs`, `${packageRoot}/gifs`, { overwrite: true, recursive: true })
   })
 
-  console.log('Installed docs')
+  const child = spawn('git', ['add', '*.md', '*.gif'], { stdio: 'inherit' })
+  child.on('exit', (code, signal) => {
+    if (code !== 0 && signal !== 'SIGTERM') {
+      console.error('Installing docs failed')
+      process.exit(1)
+    }
+
+    console.log('Installed docs')
+    process.exit(0)
+  })
 })()

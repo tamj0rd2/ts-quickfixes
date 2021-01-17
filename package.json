@@ -23,11 +23,14 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "run-s install-docs build && lint-staged",
+      "pre-commit": "npm run build && lint-staged",
       "prepare-commit-msg": "exec < /dev/tty && git cz --hook || true"
     }
   },
   "lint-staged": {
+    "*.{md,gif}": [
+      "npm run install-docs"
+    ],
     "*.ts": [
       "npm run lint:base -- --fix"
     ]
