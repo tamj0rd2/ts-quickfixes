@@ -6,6 +6,19 @@ interface Employee extends Person {
 
 export const employee: Employee = {}
 
+interface Dog {
+  age: number
+  favourites: {
+    toy: string
+    food: string
+  }
+}
+
+export const dog: Dog = {
+  age: 5,
+  favourites: {},
+}
+
 interface Account {
   accountNumber: string
   sortCode: string

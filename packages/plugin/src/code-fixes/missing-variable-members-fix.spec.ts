@@ -7,6 +7,7 @@ import {
   getNodeRange,
   stripLeadingWhitespace,
 } from '../test-helpers'
+import { NodeRange } from './fix'
 import { MissingVariableMembersFix } from './missing-variable-members-fix'
 
 describe('missing variable members fix', () => {
@@ -23,13 +24,7 @@ describe('missing variable members fix', () => {
       `)
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
-      const fix = new MissingVariableMembersFix({
-        ts,
-        filePath,
-        program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
-        logger: createDummyLogger(),
-        ...errorLocation,
-      })
+      const fix = createFix(filePath, errorLocation)
 
       const initializerLocation = getNodeRange(fileContent, '{}')
       expect(fix.changes).toStrictEqual<ts.FileTextChanges[]>([
@@ -61,13 +56,7 @@ describe('missing variable members fix', () => {
       `)
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
-      const fix = new MissingVariableMembersFix({
-        ts,
-        filePath,
-        program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
-        logger: createDummyLogger(),
-        ...errorLocation,
-      })
+      const fix = createFix(filePath, errorLocation)
 
       const initializerLocation = getNodeRange(fileContent, '{}')
       expect(fix.changes).toStrictEqual<ts.FileTextChanges[]>([
@@ -106,16 +95,7 @@ describe('missing variable members fix', () => {
       `)
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
-      const fix = new MissingVariableMembersFix({
-        ts,
-        filePath,
-        program: createTestProgram(
-          [filePath, inheritedFilePath],
-          MissingVariableMembersFix.supportedErrorCodes,
-        ),
-        logger: createDummyLogger(),
-        ...errorLocation,
-      })
+      const fix = createFix(filePath, errorLocation)
 
       const initializerLocation = getNodeRange(fileContent, '{}')
       expect(fix.changes).toStrictEqual<ts.FileTextChanges[]>([
@@ -153,13 +133,7 @@ describe('missing variable members fix', () => {
         `)
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
-      const fix = new MissingVariableMembersFix({
-        ts,
-        filePath,
-        program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
-        logger: createDummyLogger(),
-        ...errorLocation,
-      })
+      const fix = createFix(filePath, errorLocation)
 
       const initializerLocation = getNodeRange(fileContent, value)
       expect(fix.changes).toStrictEqual<ts.FileTextChanges[]>([
@@ -182,6 +156,43 @@ describe('missing variable members fix', () => {
     })
   })
 
+  describe.skip('when a nested object has missing members', () => {
+    it('declares the missing members', () => {
+      const value = '{}'
+      const [filePath, fileContent] = FsMocker.addFile(`
+        interface TargetInterface {
+          age: number
+          favourites: {
+            colour: string
+            film: string
+          }
+        }
+
+        export const targetVariable: TargetInterface = {
+          age: 100,
+          favourites: ${value}
+        }
+      `)
+
+      const errorLocation = getNodeRange(fileContent, 'favourites', { occurrence: 2 })
+      const fix = createFix(filePath, errorLocation)
+
+      const initializerLocation = getNodeRange(fileContent, value)
+      expect(fix.changes).toHaveLength(1)
+      expect(fix.changes[0].textChanges).toStrictEqual<ts.TextChange[]>([
+        {
+          span: { start: initializerLocation.start, length: 2 },
+          newText: stripLeadingWhitespace(
+            `{
+                 colour: 'todo',
+                 film: 'todo'
+             }`,
+          ),
+        },
+      ])
+    })
+  })
+
   describe('member types', () => {
     const testInitializer = (memberType: string, expectedInitializer: string) => {
       it(`can declare a missing ${memberType} member`, () => {
@@ -194,13 +205,7 @@ describe('missing variable members fix', () => {
         `)
 
         const errorLocation = getNodeRange(fileContent, 'targetVariable')
-        const fix = new MissingVariableMembersFix({
-          ts,
-          filePath,
-          program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
-          logger: createDummyLogger(),
-          ...errorLocation,
-        })
+        const fix = createFix(filePath, errorLocation)
 
         expect(fix.changes).toHaveLength(1)
         expect(fix.changes[0].textChanges).toHaveLength(1)
@@ -240,13 +245,7 @@ describe('missing variable members fix', () => {
       `)
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
-      const fix = new MissingVariableMembersFix({
-        ts,
-        filePath,
-        program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
-        logger: createDummyLogger(),
-        ...errorLocation,
-      })
+      const fix = createFix(filePath, errorLocation)
 
       expect(fix.changes).toHaveLength(1)
       expect(fix.changes[0].textChanges).toHaveLength(1)
@@ -275,13 +274,7 @@ describe('missing variable members fix', () => {
       `)
 
       const errorLocation = getNodeRange(fileContent, 'targetVariable')
-      const fix = new MissingVariableMembersFix({
-        ts,
-        filePath,
-        program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
-        logger: createDummyLogger(),
-        ...errorLocation,
-      })
+      const fix = createFix(filePath, errorLocation)
 
       expect(fix.changes).toHaveLength(1)
       expect(fix.changes[0].textChanges).toHaveLength(1)
@@ -308,13 +301,7 @@ describe('missing variable members fix', () => {
         `)
 
       const errorLocation = getNodeRange(targetFileContent, 'targetVariable')
-      const fix = new MissingVariableMembersFix({
-        ts,
-        filePath: targetFilePath,
-        program: createTestProgram(FsMocker.fileNames, MissingVariableMembersFix.supportedErrorCodes),
-        logger: createDummyLogger(),
-        ...errorLocation,
-      })
+      const fix = createFix(targetFilePath, errorLocation)
 
       expect(fix.changes).toHaveLength(1)
       expect(fix.changes[0].textChanges).toHaveLength(1)
@@ -328,3 +315,13 @@ describe('missing variable members fix', () => {
     })
   })
 })
+
+function createFix(filePath: string, errorLocation: NodeRange): MissingVariableMembersFix {
+  return new MissingVariableMembersFix({
+    ts,
+    filePath,
+    program: createTestProgram(FsMocker.fileNames, MissingVariableMembersFix.supportedErrorCodes),
+    logger: createDummyLogger(),
+    ...errorLocation,
+  })
+}

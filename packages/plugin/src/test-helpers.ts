@@ -74,12 +74,19 @@ export class FsMocker {
   }
 }
 
+interface NodeRangeOpts {
+  useFullStart: boolean
+  // find the nth occurence of the search, 1-indexed
+  occurrence: number
+}
+
 export function getNodeRange(
   fileContent: string,
   search: string,
-  { useFullStart = false }: Partial<{ useFullStart: boolean }> = {},
+  { useFullStart = false, occurrence = 1 }: Partial<NodeRangeOpts> = {},
 ): { start: number; end: number } {
-  const start = fileContent.indexOf(search) + (useFullStart ? -1 : 0)
+  const foundIndex = fileContent.split(search, occurrence).join(search).length
+  const start = foundIndex + (useFullStart ? -1 : 0)
   if (start < 0) throw new Error(`Could not find ${search} in the file content`)
   return { start, end: start + search.length }
 }

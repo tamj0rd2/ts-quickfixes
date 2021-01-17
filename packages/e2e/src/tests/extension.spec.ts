@@ -14,16 +14,32 @@ describe('Acceptance tests', () => {
   })
 
   describe('Declare missing members', () => {
-    const happyPathCases = [['declares missing members for interfaces that have been extended', 'employee']]
+    const fixName = 'Declare missing members'
 
-    it.each(happyPathCases)('%s', async (_, variableName) => {
+    it('declares missing members for objects whose interfaces are known', async () => {
+      const variableName = 'employee'
       const { getCodeActions } = createTestDeps()
       const testFileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 
       const codeActions = await getCodeActions(testingDocument, `const ${variableName}`)
-      expect(codeActions[0].title).toStrictEqual('Declare missing members')
+      expect(codeActions[0].title).toStrictEqual(fixName)
+      await vscode.workspace.applyEdit(codeActions[0].edit!)
+
+      const variableValue = getVariableValue(getAllDocumentText(testingDocument), variableName)
+      expect(variableValue).toStrictEqual(await readFixture(variableName))
+    })
+
+    it('can declare missing members for nested objects', async () => {
+      const variableName = 'dog'
+      const { getCodeActions } = createTestDeps()
+      const testFileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
+      const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
+      await vscode.window.showTextDocument(testingDocument)
+
+      const codeActions = await getCodeActions(testingDocument, `favourites`)
+      expect(codeActions[0].title).toStrictEqual(fixName)
       await vscode.workspace.applyEdit(codeActions[0].edit!)
 
       const variableValue = getVariableValue(getAllDocumentText(testingDocument), variableName)
