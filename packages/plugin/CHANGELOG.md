@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.5.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.4.1...ts-quickfixes-plugin-v1.5.0) (2021-02-18)
+
+
+### Features
+
+* **plugin:** declare missing argument members in const arrow functions ([378ada1](https://github.com/tamj0rd2/ts-quickfixes/commit/378ada1d6aea1663a1798842b00ea6a5bb220e94)), closes [#77](https://github.com/tamj0rd2/ts-quickfixes/issues/77)
+
 # [ts-quickfixes-plugin-v1.4.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.4.0...ts-quickfixes-plugin-v1.4.1) (2021-01-10)
 
 
