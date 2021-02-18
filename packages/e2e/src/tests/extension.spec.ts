@@ -48,6 +48,23 @@ describe('Acceptance tests', () => {
         `export const newBalance = withdrawMoney({ balance: 200, accountNumber: 'todo', sortCode: 'todo' }, 123)`,
       )
     })
+
+    it('declares missing members for const arrow function arguments', async () => {
+      const { getCodeActions } = createTestDeps()
+      const fileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
+      const document = await vscode.workspace.openTextDocument(fileUri)
+      await vscode.window.showTextDocument(document)
+
+      const argumentValue = '{ balance: 400 }'
+      const codeActions = await getCodeActions(document, argumentValue)
+      expect(codeActions[0].title).toStrictEqual('Declare missing argument members')
+      await vscode.workspace.applyEdit(codeActions[0].edit!)
+
+      const documentText = getAllDocumentText(document)
+      expect(documentText).toContain(
+        `sendMoney({ balance: 400, accountNumber: 'todo', sortCode: 'todo' }, 200)`,
+      )
+    })
   })
 })
 

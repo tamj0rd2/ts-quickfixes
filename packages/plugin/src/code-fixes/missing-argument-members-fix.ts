@@ -66,16 +66,7 @@ export class MissingArgumentMembersFix extends CodeFix {
       TODO('Invalid argument index')
     }
 
-    const { symbol: identifierSymbol } = this.typeChecker.getTypeAtLocation(callExpression.expression)
-    if (
-      !identifierSymbol.valueDeclaration ||
-      !this.ts.isFunctionDeclaration(identifierSymbol.valueDeclaration)
-    ) {
-      TODO('no value declaration')
-    }
-
-    const functionDeclaration = identifierSymbol.valueDeclaration
-    const expectedType = functionDeclaration.parameters[argumentIndex]?.type
+    const expectedType = this.getExpectedTypeForArgumentAtIndex(callExpression, argumentIndex)
 
     if (!expectedType) {
       TODO('could not find a matching parameter for that argument')
@@ -90,6 +81,29 @@ export class MissingArgumentMembersFix extends CodeFix {
     }
 
     throw new Error('found a paramter for that argument but it was an unsupported type')
+  }
+
+  private getExpectedTypeForArgumentAtIndex(
+    callExpression: ts.CallExpression,
+    argumentIndex: number,
+  ): ts.TypeNode {
+    const { symbol: identifierSymbol } = this.typeChecker.getTypeAtLocation(callExpression.expression)
+    if (!identifierSymbol.valueDeclaration) {
+      TODO('no value declaration')
+    }
+
+    if (
+      this.ts.isFunctionDeclaration(identifierSymbol.valueDeclaration) ||
+      this.ts.isArrowFunction(identifierSymbol.valueDeclaration)
+    ) {
+      const functionDeclaration = identifierSymbol.valueDeclaration
+      const expectedType = functionDeclaration.parameters[argumentIndex]?.type
+      if (expectedType) return expectedType
+
+      TODO('could not find a matching parameter for that argument')
+    }
+
+    TODO('not a function or arrow function')
   }
 }
 

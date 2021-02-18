@@ -104,4 +104,36 @@ describe('Fill Missing Argument Member', () => {
       },
     ])
   })
+
+  it('fills in undeclared argument members for const functions', () => {
+    const argumentValue = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
+      const targetFunction = (someArgument: { min: number; max: number } ) => {
+        return 123
+      }
+      export const functionOutput = targetFunction(${argumentValue})
+    `)
+
+    const initializerLocation = getNodeRange(fileContent, argumentValue)
+    const fix = new MissingArgumentMembersFix({
+      filePath,
+      ts,
+      program: createTestProgram([filePath], MissingArgumentMembersFix.supportedErrorCodes),
+      logger: createDummyLogger(),
+      ...initializerLocation,
+    })
+
+    expect(fix.changes).toStrictEqual<ts.FileTextChanges[]>([
+      {
+        fileName: filePath,
+        textChanges: [
+          {
+            span: { start: initializerLocation.start, length: argumentValue.length },
+            newText: `{ min: 0, max: 0 }`,
+          },
+        ],
+        isNewFile: false,
+      },
+    ])
+  })
 })

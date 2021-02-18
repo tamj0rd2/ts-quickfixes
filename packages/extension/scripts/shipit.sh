@@ -26,9 +26,10 @@ semantic-release
 print 'Semantic release complete'
 UPDATED_VERSION_NUMBER="$(node ./scripts/get-marketplace-version.js)"
 
-if [ "$CURRENT_VERSION_NUMBER" == "$UPDATED_VERSION_NUMBER" ]; then
-  print 'Not publishing the extension because there was no version increment'
-else
-  print "Going to publish the extension under version ${UPDATED_VERSION_NUMBER}"
-  vsce publish -p $PUBLISHER_TOKEN $UPDATED_VERSION_NUMBER
-fi
+# === Still haven't figure out how to make this work. Use publish.sh in the repo root.
+# if [ "$CURRENT_VERSION_NUMBER" == "$UPDATED_VERSION_NUMBER" ]; then
+#   print 'Not publishing the extension because there was no version increment'
+# else
+#   print "Going to publish the extension under version ${UPDATED_VERSION_NUMBER}"
+#   vsce publish -p $PUBLISHER_TOKEN $UPDATED_VERSION_NUMBER
+# fi

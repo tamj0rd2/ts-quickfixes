@@ -52,7 +52,7 @@ should be updated/released manually for now.
 2. Run `npm i --prefix ./packages/extension/ ts-quickfixes-plugin` (If the plugin
   has had a recent release, the package-lock.json for the extension should have
   pending changes in git. If not, something went wrong,)
-3. Commit the `package-lock.json` as a feat (so that a new extension versions can be released)
+3. Commit the `package-lock.json` as a feat (so that a new extension version can be released)
 4. Push the changes
 5. Run `./publish.sh` to publish a new version of the extension
 
