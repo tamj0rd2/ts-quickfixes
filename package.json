@@ -19,10 +19,7 @@
     "shipit": "lerna run --stream shipit",
     "install-docs": "ts-node ./install-docs.ts",
     "logs": "tail -f ../ts-logs.txt | grep --line-buffered --color=always ts-quickfixes-plugin",
-    "lernaupdate": "lernaupdate",
-    "postinstall": "husky install",
-    "prepublishOnly": "pinst --disable",
-    "postpublish": "pinst --enable"
+    "lernaupdate": "lernaupdate"
   },
   "lint-staged": {
     "*.{md,gif}": [

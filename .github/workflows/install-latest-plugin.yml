@@ -39,7 +39,12 @@ jobs:
           push: false
       - name: Bump extension version
         run: npx lerna exec --stream --scope ts-quickfixes-extension -- semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Build extension
         run: yarn build && npx lerna run --scope ts-quickfixes-extension --stream vsce:package
       - name: Release extension
         run: npx lerna run --scope ts-quickfixes-extension --stream vsce:publish
+        env:
+          PUBLISHER_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
