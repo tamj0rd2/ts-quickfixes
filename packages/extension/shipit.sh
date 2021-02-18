@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+export HUSKY=0
+
 # npm run clean
 # npm ci
 # npm run build
@@ -17,11 +19,10 @@ fi
 
 echo "Going to release extension using updated plugin version $UPDATED_PLUGIN_VERSION"
 git add package.json package-lock.json
+git commit -m "feat(deps): update to latest plugin version $UPDATED_PLUGIN_VERSION"
 
-echo "would commit at this point, then do a dry run"
-HUSKY=0 git commit -m "feat(deps): update to latest plugin version $UPDATED_PLUGIN_VERSION"
-
-semantic-release --no-ci
+# this script needs testing beyond this point. it failed locally last time - angry about ci.yml changing
+semantic-release
 
 npx lerna run --scope ts-quickfixes-extension --stream vsce:package
 npx lerna run --scope ts-quickfixes-extension --stream vsce:publish
