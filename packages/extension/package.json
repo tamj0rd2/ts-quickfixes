@@ -30,7 +30,7 @@
     ]
   },
   "scripts": {
-    "shipit": "semantic-release",
+    "shipit": "./shipit.sh",
     "vsce:package": "vsce package -o extension.vsix",
     "vsce:publish": "vsce publish --packagePath extension.vsix",
     "test": "echo WARNING: there are no tests in the extension package yet"
