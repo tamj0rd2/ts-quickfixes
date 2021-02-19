@@ -3,10 +3,6 @@ set -e
 
 export HUSKY=0
 
-# npm run clean
-# npm ci
-# npm run build
-
 CURRENT_PLUGIN_VERSION="$(jq '.dependencies["ts-quickfixes-plugin"].version' ./package-lock.json -r)"
 npm i ts-quickfixes-plugin@latest --save
 UPDATED_PLUGIN_VERSION="$(jq '.dependencies["ts-quickfixes-plugin"].version' ./package-lock.json -r)"
@@ -22,7 +18,7 @@ git add package.json package-lock.json
 git commit -m "feat(deps): update to latest plugin version $UPDATED_PLUGIN_VERSION"
 
 # this script needs testing beyond this point. it failed locally last time - angry about ci.yml changing
-semantic-release
+semantic-release --no-ci
 
 npx lerna run --scope ts-quickfixes-extension --stream vsce:package
 npx lerna run --scope ts-quickfixes-extension --stream vsce:publish
