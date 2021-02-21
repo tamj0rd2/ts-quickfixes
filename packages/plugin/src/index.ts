@@ -19,8 +19,7 @@ function init(modules: Modules): { create: CreateFn } {
             message instanceof Error ? message.stack?.replace('\n', '. ') : message
           }`,
         ),
-      logNode: (node: ts.Node, prefix?: string): void =>
-        logger.info(prefix ? `${prefix} - ${node.getFullText()}` : node.getText().replace('\n', ' ')),
+      logNode: (): void => undefined,
     }
     logger.info('Hello world!')
 

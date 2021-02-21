@@ -1,4 +1,4 @@
-import { CodeFix, CodeFixArgs, NodeRange } from './fix'
+import { CodeFix, CodeFixArgs, NodeRange, ObjectDeclarationLike } from './fix'
 
 interface MissingObjectMembersArgs extends CodeFixArgs {
   filePath: string
@@ -24,7 +24,7 @@ export class MissingObjectMembersFix extends CodeFix {
 
     this.logger.logNode(initializer, 'objectLiteral')
 
-    const { expectedTypeNode } = this.getExpectedTypeNodeForObject(initializer)
+    const expectedTypeNode = this.getExpectedTypeNodeForObject(initializer)
     const undeclaredMembers = this.getUndeclaredMemberSymbols(initializer, expectedTypeNode)
     const newText = this.getReplacedObject(sourceFile, initializer, undeclaredMembers)
 
@@ -43,25 +43,50 @@ export class MissingObjectMembersFix extends CodeFix {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  private getExpectedTypeNodeForObject(objectLiteral: ts.ObjectLiteralExpression) {
+  private getExpectedTypeNodeForObject(objectLiteral: ts.ObjectLiteralExpression): ObjectDeclarationLike {
     const { propertyName } = this.getPropertyInfo(objectLiteral)
     const { expectedVariableTypeNode } = this.getVariableInfo(objectLiteral)
 
     const wantedMember = expectedVariableTypeNode.members.find(
       (m): m is ts.PropertySignature => m.name?.getText() === propertyName && this.ts.isPropertySignature(m),
     )
+
     if (!wantedMember) this.TODO(`Could not find definition for the member ${propertyName}`)
+    this.logger.logNode(wantedMember, 'wantedMember')
+
     if (!this.ts.isIdentifier(wantedMember.name)) this.TODO(`Member ${propertyName} not an identifier`)
+    this.logger.logNode(wantedMember.name, 'wantedMember.name')
 
-    const expectedTypeNode = this.getTypeNodeByIdentifier(wantedMember.name)
-    this.logger.logNode(expectedTypeNode, 'wantedMemberType')
+    const memberTypeNode = wantedMember.type
+    if (!memberTypeNode) this.TODO(`No type node for member ${propertyName}`)
+    this.logger.logNode(memberTypeNode, 'memberTypeNode')
 
-    return { expectedTypeNode }
+    if (this.ts.isTypeLiteralNode(memberTypeNode)) {
+      return memberTypeNode
+    }
+
+    if (this.ts.isTypeReferenceNode(memberTypeNode)) {
+      return this.derefTypeReferenceNode(memberTypeNode)
+    }
+
+    if (this.ts.isArrayTypeNode(memberTypeNode)) {
+      if (!this.ts.isTypeReferenceNode(memberTypeNode.elementType)) {
+        this.TODO('Could not find a type reference for the array contents')
+      }
+
+      return this.derefTypeReferenceNode(memberTypeNode.elementType)
+    }
+
+    this.TODO('Not an array or an object declaration')
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   private getPropertyInfo(objectLiteral: ts.ObjectLiteralExpression) {
-    const propertyAssignment = this.findParentNode(objectLiteral, this.ts.isPropertyAssignment)
+    const propertyAssignment = this.findParentNode(
+      objectLiteral,
+      this.ts.isPropertyAssignment,
+      'could not find property assignment',
+    )
     this.logger.logNode(propertyAssignment, 'propertyAssignment')
 
     const propertyName = propertyAssignment.name
@@ -72,7 +97,11 @@ export class MissingObjectMembersFix extends CodeFix {
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   private getVariableInfo(objectLiteral: ts.ObjectLiteralExpression) {
-    const variableDeclaration = this.findParentNode(objectLiteral, this.ts.isVariableDeclaration)
+    const variableDeclaration = this.findParentNode(
+      objectLiteral,
+      this.ts.isVariableDeclaration,
+      'could not find variable declaration',
+    )
     this.logger.logNode(variableDeclaration, 'variableDeclaration')
 
     const variableType = this.findChildNode(
@@ -100,22 +129,37 @@ export class MissingObjectMembersFix extends CodeFix {
 
   private getInitializer(sourceFile: ts.SourceFile, { start, end }: NodeRange): ts.ObjectLiteralExpression {
     const matchesPosition = this.curryMatchesPosition(sourceFile, { start, end })
-    const identifier = this.findChildNode(
+    const node = this.findChildNode(
       sourceFile,
-      (node): node is ts.Identifier => matchesPosition(node) && this.ts.isIdentifier(node),
-      `Could not find a node at pos ${start}:${end}`,
+      (node): node is ts.Node => matchesPosition(node),
+      `could not find a node with position ${start},${end}`,
     )
+    this.logger.logNode(node, 'node at error location')
 
-    const { initializer } = this.findParentNode(
-      identifier,
-      this.ts.isPropertyAssignment,
-      'Could not find a property assignment',
-    )
-
-    if (!initializer || !this.ts.isObjectLiteralExpression(initializer)) {
-      throw new Error('No initializer for the given variable')
+    if (this.ts.isObjectLiteralExpression(node)) {
+      return node
     }
 
-    return initializer
+    if (this.ts.isIdentifier(node)) {
+      const identifier = this.findChildNode(
+        sourceFile,
+        (node): node is ts.Identifier => matchesPosition(node) && this.ts.isIdentifier(node),
+        `Could not find an identifier at pos ${start}:${end}`,
+      )
+
+      const { initializer } = this.findParentNode(
+        identifier,
+        this.ts.isPropertyAssignment,
+        'Could not find a property assignment',
+      )
+
+      if (!initializer || !this.ts.isObjectLiteralExpression(initializer)) {
+        throw new Error('No initializer for the given variable')
+      }
+
+      return initializer
+    }
+
+    this.TODO('not an identifier or an object literal')
   }
 }

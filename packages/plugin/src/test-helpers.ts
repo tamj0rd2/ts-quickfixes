@@ -115,12 +115,24 @@ export function createImportStatement(importName: string, importFilePath: string
   return `import { ${importName} } from './${importFilePath.replace('.ts', '')}'`
 }
 
-export function createDummyLogger(): Logger {
-  return {
-    error: jest.fn().mockImplementation(console.log),
-    info: jest.fn().mockImplementation(console.log),
-    logNode: jest
-      .fn()
-      .mockImplementation((node: ts.Node, prefix?: string) => console.log(prefix, node.getText())),
+export function createDummyLogger(enableLogging = false): Logger {
+  const dummyLogger = {
+    error: jest.fn(),
+    info: jest.fn(),
+    logNode: jest.fn(),
   }
+
+  if (enableLogging) {
+    dummyLogger.info.mockImplementation(console.log)
+    dummyLogger.error.mockImplementation(console.log)
+    dummyLogger.logNode.mockImplementation((node: ts.Node, prefix?: string) =>
+      console.dir({
+        kind: ts.SyntaxKind[node.kind],
+        prefix,
+        text: node.getText().substring(0, 100),
+      }),
+    )
+  }
+
+  return dummyLogger
 }

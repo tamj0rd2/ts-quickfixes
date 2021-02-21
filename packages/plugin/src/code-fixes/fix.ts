@@ -37,19 +37,25 @@ export abstract class CodeFix implements ts.CodeFixAction {
   protected findChildNode<T extends ts.Node>(
     rootNode: ts.Node,
     predicate: (node: ts.Node) => node is T,
-    failureMessage = 'Node not found',
+    failureMessage: string,
   ): T {
-    if (predicate(rootNode)) return rootNode as T
+    let foundNode: T | undefined
 
-    for (const childNode of rootNode.getChildren()) {
+    rootNode.forEachChild((child) => {
+      if (foundNode) return
+      if (predicate(child)) {
+        foundNode = child
+        return
+      }
+
       try {
-        const foundNode = this.findChildNode(childNode, predicate, failureMessage)
-        if (foundNode) return foundNode as T
-      } catch (err) {
+        foundNode = this.findChildNode(child, predicate, failureMessage)
+      } catch {
         // ignore
       }
-    }
+    })
 
+    if (foundNode) return foundNode
     throw new Error(failureMessage)
   }
 
@@ -87,6 +93,8 @@ export abstract class CodeFix implements ts.CodeFixAction {
   protected getTypeNodeByIdentifier = (identifier: ts.Identifier): ObjectDeclarationLike => {
     const { symbol } = this.typeChecker.getTypeAtLocation(identifier)
     const declaration = symbol.declarations[0]
+    this.logger.logNode(declaration, 'declaration')
+
     if (this.isObjectDeclarationLike(declaration)) {
       return declaration
     }
@@ -184,6 +192,14 @@ export abstract class CodeFix implements ts.CodeFixAction {
       this.ts.factory.createIdentifier(memberSymbol.name),
       createInitializer(memberSymbol),
     )
+  }
+
+  protected derefTypeReferenceNode(typeReference: ts.TypeReferenceNode): ObjectDeclarationLike {
+    if (!this.ts.isIdentifier(typeReference.typeName)) {
+      throw new Error('TypeReference typeName does not have an identifier')
+    }
+
+    return this.getTypeNodeByIdentifier(typeReference.typeName)
   }
 
   protected TODO(prefix: string): never {

@@ -58,6 +58,7 @@ export class MissingArgumentMembersFix extends CodeFix {
       sourceFile,
       (node): node is ts.ObjectLiteralExpression =>
         matchesPosition(node) && this.ts.isObjectLiteralExpression(node),
+      'could not find the argument',
     )
 
     const callExpression = this.findParentNode(argumentValue, this.ts.isCallExpression)

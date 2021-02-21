@@ -1,10 +1,14 @@
+interface Responsibility {
+  description: string
+}
+
 interface Job {
   name: string
   compensation: {
     salary: number
     includesHealthcare: boolean
   }
-  responsibilities: { description: string }[]
+  responsibilities: Responsibility[]
 }
 
 export const job: Job = {
