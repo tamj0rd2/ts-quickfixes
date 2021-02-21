@@ -43,7 +43,7 @@ export abstract class CodeFix implements ts.CodeFixAction {
 
     for (const childNode of rootNode.getChildren()) {
       try {
-        const foundNode = this.findChildNode(childNode, predicate)
+        const foundNode = this.findChildNode(childNode, predicate, failureMessage)
         if (foundNode) return foundNode as T
       } catch (err) {
         // ignore
@@ -56,13 +56,14 @@ export abstract class CodeFix implements ts.CodeFixAction {
   protected findParentNode<T extends ts.Node>(
     startingNode: ts.Node,
     predicate: (node: ts.Node) => node is T,
+    failureMessage = 'Node not found',
   ): T {
     const parent = startingNode.parent
     if (!parent) {
-      throw new Error('Could not find a matching parent node')
+      throw new Error(failureMessage ?? 'Could not find a matching parent node')
     }
 
-    return predicate(parent) ? parent : this.findParentNode(parent, predicate)
+    return predicate(parent) ? parent : this.findParentNode(parent, predicate, failureMessage)
   }
 
   protected curryMatchesPosition = (sourceFile: ts.SourceFile, position: { start: number; end: number }) => (
@@ -79,38 +80,11 @@ export abstract class CodeFix implements ts.CodeFixAction {
     return this.getExpectedMemberSymbols(expectedType).filter((s) => !declaredMembers.has(s.name))
   }
 
-  protected getAlreadyDeclaredMemberNames = (initializer: ts.ObjectLiteralExpression): Set<string> => {
-    const { symbol } = this.typeChecker.getTypeAtLocation(initializer)
-    const alreadyDeclaredMemberNames = new Set<string>()
-    symbol.members?.forEach((member) => alreadyDeclaredMemberNames.add(member.name))
-    return alreadyDeclaredMemberNames
-  }
-
-  protected getExpectedMemberSymbols = (node: ObjectDeclarationLike): ts.Symbol[] => {
-    const { symbol } = this.typeChecker.getTypeAtLocation(node)
-    const expectedMembers: ts.Symbol[] = []
-    symbol.members?.forEach((member) => expectedMembers.push(member))
-
-    if (this.ts.isInterfaceDeclaration(node)) {
-      const inheritedMemberSymbols = node.heritageClauses
-        ?.flatMap((clause) => clause.types.map((type) => type.expression))
-        .filter(this.ts.isIdentifier)
-        .map(this.getTypeByIdentifier)
-        .flatMap(this.getExpectedMemberSymbols)
-
-      if (inheritedMemberSymbols) {
-        expectedMembers.push(...inheritedMemberSymbols)
-      }
-    }
-
-    return expectedMembers
-  }
-
   protected isObjectDeclarationLike = (node: ts.Node | undefined): node is ObjectDeclarationLike => {
     return !!node && (this.ts.isTypeLiteralNode(node) || this.ts.isInterfaceDeclaration(node))
   }
 
-  protected getTypeByIdentifier = (identifier: ts.Identifier): ObjectDeclarationLike => {
+  protected getTypeNodeByIdentifier = (identifier: ts.Identifier): ObjectDeclarationLike => {
     const { symbol } = this.typeChecker.getTypeAtLocation(identifier)
     const declaration = symbol.declarations[0]
     if (this.isObjectDeclarationLike(declaration)) {
@@ -118,6 +92,24 @@ export abstract class CodeFix implements ts.CodeFixAction {
     }
 
     throw new Error('The type of the variable is not an object declaration')
+  }
+
+  protected getReplacedObject(
+    sourceFile: ts.SourceFile,
+    originalInitializer: ts.ObjectLiteralExpression,
+    additionalMemberSymbols: ts.Symbol[],
+  ): string {
+    const replacedInitializer = this.ts.factory.createObjectLiteralExpression(
+      [...originalInitializer.properties, ...additionalMemberSymbols.map(this.createMemberForSymbol)],
+      true,
+    )
+
+    return this.ts
+      .createPrinter(
+        { newLine: this.ts.NewLineKind.LineFeed },
+        { substituteNode: (_, node) => (node === originalInitializer ? replacedInitializer : node) },
+      )
+      .printNode(this.ts.EmitHint.Unspecified, originalInitializer, sourceFile)
   }
 
   protected createMemberForSymbol = (memberSymbol: ts.Symbol): ts.PropertyAssignment => {
@@ -192,6 +184,37 @@ export abstract class CodeFix implements ts.CodeFixAction {
       this.ts.factory.createIdentifier(memberSymbol.name),
       createInitializer(memberSymbol),
     )
+  }
+
+  protected TODO(prefix: string): never {
+    throw new Error(`not yet implemented - ${prefix}`)
+  }
+
+  private getAlreadyDeclaredMemberNames = (initializer: ts.ObjectLiteralExpression): Set<string> => {
+    const { symbol } = this.typeChecker.getTypeAtLocation(initializer)
+    const alreadyDeclaredMemberNames = new Set<string>()
+    symbol.members?.forEach((member) => alreadyDeclaredMemberNames.add(member.name))
+    return alreadyDeclaredMemberNames
+  }
+
+  private getExpectedMemberSymbols = (node: ObjectDeclarationLike): ts.Symbol[] => {
+    const { symbol } = this.typeChecker.getTypeAtLocation(node)
+    const expectedMembers: ts.Symbol[] = []
+    symbol.members?.forEach((member) => expectedMembers.push(member))
+
+    if (this.ts.isInterfaceDeclaration(node)) {
+      const inheritedMemberSymbols = node.heritageClauses
+        ?.flatMap((clause) => clause.types.map((type) => type.expression))
+        .filter(this.ts.isIdentifier)
+        .map(this.getTypeNodeByIdentifier)
+        .flatMap(this.getExpectedMemberSymbols)
+
+      if (inheritedMemberSymbols) {
+        expectedMembers.push(...inheritedMemberSymbols)
+      }
+    }
+
+    return expectedMembers
   }
 }
 

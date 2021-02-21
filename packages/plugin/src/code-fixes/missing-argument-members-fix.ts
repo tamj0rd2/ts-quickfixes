@@ -77,7 +77,7 @@ export class MissingArgumentMembersFix extends CodeFix {
     }
 
     if (this.ts.isTypeReferenceNode(expectedType) && this.ts.isIdentifier(expectedType.typeName)) {
-      return { value: argumentValue, expectedType: this.getTypeByIdentifier(expectedType.typeName) }
+      return { value: argumentValue, expectedType: this.getTypeNodeByIdentifier(expectedType.typeName) }
     }
 
     throw new Error('found a paramter for that argument but it was an unsupported type')

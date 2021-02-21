@@ -66,6 +66,24 @@ describe('Acceptance tests', () => {
       )
     })
   })
+
+  describe('Declare missing object members', () => {
+    it('declares missing members for nested objects', async () => {
+      const { getCodeActions } = createTestDeps()
+      const testFileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
+      const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
+      await vscode.window.showTextDocument(testingDocument)
+
+      const codeActions = await getCodeActions(testingDocument, `compensation: {}`)
+      // the other code fix should not be offered...
+      // expect(codeActions).toHaveLength(1)
+      expect(codeActions[1].title).toStrictEqual('Declare missing object members')
+      await vscode.workspace.applyEdit(codeActions[1].edit!)
+
+      const documentText = getAllDocumentText(testingDocument)
+      expect(documentText).toContain(await readFixture('compensation'))
+    })
+  })
 })
 
 function createTestDeps() {

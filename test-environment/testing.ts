@@ -24,3 +24,18 @@ export const sendMoney = (account: Account, amount: number): void => {
 }
 
 sendMoney({ balance: 400 }, 200)
+
+interface Job {
+  name: string
+  compensation: {
+    salary: number
+    includesHealthcare: boolean
+  }
+  responsibilities: { description: string }[]
+}
+
+export const job: Job = {
+  name: 'todo',
+  compensation: {},
+  responsibilities: [{}],
+}

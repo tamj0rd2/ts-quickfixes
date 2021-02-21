@@ -77,9 +77,10 @@ export class FsMocker {
 export function getNodeRange(
   fileContent: string,
   search: string,
-  { useFullStart = false }: Partial<{ useFullStart: boolean }> = {},
+  { useFullStart = false, index = 0 }: Partial<{ useFullStart: boolean; index: number }> = {},
 ): { start: number; end: number } {
-  const start = fileContent.indexOf(search) + (useFullStart ? -1 : 0)
+  const indexInsideFileContent = fileContent.split(search, index + 1).join(search).length
+  const start = indexInsideFileContent + (useFullStart ? -1 : 0)
   if (start < 0) throw new Error(`Could not find ${search} in the file content`)
   return { start, end: start + search.length }
 }
@@ -116,7 +117,10 @@ export function createImportStatement(importName: string, importFilePath: string
 
 export function createDummyLogger(): Logger {
   return {
-    error: jest.fn(),
-    info: jest.fn(),
+    error: jest.fn().mockImplementation(console.log),
+    info: jest.fn().mockImplementation(console.log),
+    logNode: jest
+      .fn()
+      .mockImplementation((node: ts.Node, prefix?: string) => console.log(prefix, node.getText())),
   }
 }

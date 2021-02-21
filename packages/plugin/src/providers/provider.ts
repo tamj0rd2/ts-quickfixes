@@ -18,4 +18,5 @@ export abstract class BaseProvider {
 export interface Logger {
   info: (message: string | Record<string, unknown>) => void
   error: (message: string | Error) => void
+  logNode(node: ts.Node, prefix?: string): void
 }

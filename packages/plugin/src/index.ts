@@ -1,9 +1,10 @@
 import { CodeFixProvider } from './providers'
+import { Logger } from './providers/provider'
 
 function init(modules: Modules): { create: CreateFn } {
   function create(info: ts.server.PluginCreateInfo): ts.LanguageService {
     const originalLanguageService = info.languageService
-    const logger = {
+    const logger: Logger = {
       info: (message: string | Record<string, unknown>): void =>
         info.project.projectService.logger.info(
           `ts-quickfixes-plugin: INFO: ${
@@ -18,6 +19,8 @@ function init(modules: Modules): { create: CreateFn } {
             message instanceof Error ? message.stack?.replace('\n', '. ') : message
           }`,
         ),
+      logNode: (node: ts.Node, prefix?: string): void =>
+        logger.info(prefix ? `${prefix} - ${node.getFullText()}` : node.getText().replace('\n', ' ')),
     }
     logger.info('Hello world!')
 

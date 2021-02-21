@@ -76,7 +76,7 @@ export class MissingVariableMembersFix extends CodeFix {
       throw new Error('Type reference does not have an identifier on it')
     }
 
-    const type = this.getTypeByIdentifier(typeReference.typeName)
+    const type = this.getTypeNodeByIdentifier(typeReference.typeName)
     return { initializer, type }
   }
 }
