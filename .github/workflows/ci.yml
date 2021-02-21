@@ -50,6 +50,7 @@ jobs:
       - name: Build
         run: npm run build
       - name: Release
+        aif: ${{ github.ref == 'refs/heads/master' }}
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
