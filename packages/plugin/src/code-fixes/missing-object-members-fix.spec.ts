@@ -1,7 +1,6 @@
 import ts from 'typescript/lib/tsserverlibrary'
 import { createDummyLogger, createTestProgram, FsMocker, getNodeRange } from '../test-helpers'
 import { MissingObjectMembersFix } from './missing-object-members-fix'
-import { MissingVariableMembersFix } from './missing-variable-members-fix'
 
 describe('missing object members fix', () => {
   afterEach(() => FsMocker.reset())
@@ -27,7 +26,7 @@ describe('missing object members fix', () => {
       const fix = new MissingObjectMembersFix({
         ts,
         filePath,
-        program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
+        program: createTestProgram([filePath], MissingObjectMembersFix.supportedErrorCodes),
         logger: createDummyLogger(),
         ...errorLocation,
       })
@@ -66,7 +65,7 @@ describe('missing object members fix', () => {
       const fix = new MissingObjectMembersFix({
         ts,
         filePath,
-        program: createTestProgram([filePath], MissingVariableMembersFix.supportedErrorCodes),
+        program: createTestProgram([filePath], MissingObjectMembersFix.supportedErrorCodes),
         logger: createDummyLogger(),
         ...errorLocation,
       })

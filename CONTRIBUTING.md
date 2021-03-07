@@ -62,3 +62,8 @@ should be updated/released manually for now.
 
 Try putting some logs into your code and running `npm run logs`. If you don't see your log,
 maybe the symlinking for the packages is broken. It can be fixed by running `npm run setup`
+
+## Helpful tools
+
+- This file in the Typescript repo. You might need to clone and build to get access to it: src/compiler/diagnosticInformationMap.generated.ts
+- [AST-Viewer](https://ts-ast-viewer.com/#)
