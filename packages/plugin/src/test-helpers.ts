@@ -80,6 +80,8 @@ export function getNodeRange(
   { useFullStart = false, index = 0 }: Partial<{ useFullStart: boolean; index: number }> = {},
 ): { start: number; end: number } {
   const indexInsideFileContent = fileContent.split(search, index + 1).join(search).length
+  if (indexInsideFileContent < 0) throw new Error(`Could not find ${search} in the file content`)
+
   const start = indexInsideFileContent + (useFullStart ? -1 : 0)
   if (start < 0) throw new Error(`Could not find ${search} in the file content`)
   return { start, end: start + search.length }
@@ -103,7 +105,11 @@ export function createTestProgram(fileNames: string[], allowedErrorCodes: number
   if (disallowedErrors.length > 0) {
     debugger
     console.error(
-      disallowedErrors.map(({ file, messageText }) => ({ messageText, fileName: file?.fileName })),
+      disallowedErrors.map(({ file, messageText, code }) => ({
+        code,
+        messageText,
+        fileName: file?.fileName,
+      })),
     )
     throw new Error('Unexpected errors while creating the TS program')
   }

@@ -61,6 +61,7 @@ module.exports = {
     '@typescript-eslint/require-await': 'error',
     '@typescript-eslint/no-floating-promises': 'error',
     'no-restricted-imports': ['error', 'typescript/lib/tsserverlibrary'],
+    '@typescript-eslint/no-namespace': 'off',
   },
   overrides: [
     {
