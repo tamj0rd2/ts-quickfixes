@@ -12,32 +12,7 @@ import {
 describe('declareMissingObjectMembers', () => {
   afterEach(() => FsMocker.reset())
 
-  it('can declare all members directly inside a variable declaration', () => {
-    const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
-      interface TargetType {
-        greeting: string
-        name: string
-      }
-      
-      export const target: TargetType = ${initializer}
-    `)
-
-    const newText = getNewText({
-      filePath,
-      initializerPos: getNodeRange(fileContent, initializer),
-      errorPos: getNodeRange(fileContent, 'target'),
-    })
-
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-          greeting: 'todo',
-          name: 'todo'
-      }`),
-    )
-  })
-
-  it('can declare missing members directly inside a variable declaration', () => {
+  it('can declare missing members for a variable declaration', () => {
     const initializer = `{ name: 'tam' }`
     const [filePath, fileContent] = FsMocker.addFile(`
       interface TargetType {
@@ -64,7 +39,7 @@ describe('declareMissingObjectMembers', () => {
     )
   })
 
-  it('can declare members nested in a variable declaration', () => {
+  it('can declare members nested inside a variable declaration', () => {
     const initializer = '{}'
     const [filePath, fileContent] = FsMocker.addFile(`
       interface TargetType {
@@ -77,6 +52,64 @@ describe('declareMissingObjectMembers', () => {
       }
       
       export const parent: ParentType = { target: ${initializer} }
+    `)
+
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer),
+      errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
+    })
+
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
+          greeting: 'todo',
+          name: 'todo'
+      }`),
+    )
+  })
+
+  it('can declare members at nesting level 2 inside a variable declaration', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
+      interface TargetType {
+        greeting: string
+        name: string
+      }
+
+      interface GrandParentType {
+        parent: { target: TargetType }
+      }
+      
+      export const grandParent: GrandParentType = { parent: { target: ${initializer} } }
+    `)
+
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer),
+      errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
+    })
+
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
+          greeting: 'todo',
+          name: 'todo'
+      }`),
+    )
+  })
+
+  it('can declare members at nesting level 3 inside a variable declaration', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
+      interface TargetType {
+        greeting: string
+        name: string
+      }
+
+      interface GreatGrandParentType {
+        grandParent: { parent: { target: TargetType } }
+      }
+      
+      export const greatGrandParent: GreatGrandParentType = { grandParent: { parent: { target: ${initializer} } } }
     `)
 
     const newText = getNewText({

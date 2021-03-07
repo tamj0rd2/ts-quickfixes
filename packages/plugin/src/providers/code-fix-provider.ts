@@ -1,6 +1,7 @@
 import { MissingArgumentMembersFix } from '../code-fixes/missing-argument-members-fix'
 import { MissingObjectMembersFix } from '../code-fixes/missing-object-members-fix'
 import { MissingVariableMembersFix } from '../code-fixes/missing-variable-members-fix'
+import { DeclareMissingObjectMembers } from '../declare-missing-object-members'
 import { BaseProvider } from './provider'
 
 export class CodeFixProvider extends BaseProvider {
@@ -27,46 +28,30 @@ export class CodeFixProvider extends BaseProvider {
       }
     }
 
+    const args = {
+      ts: this.ts,
+      start,
+      end,
+      filePath: fileName,
+      program: this.getProgram(),
+      logger: this.logger,
+    }
+
+    // TODO: should be ELIF
+    if (errorCodes.some(DeclareMissingObjectMembers.supportsErrorCode)) {
+      tryAddFixAction(() => DeclareMissingObjectMembers.createFix(args))
+    }
+
     if (errorCodes.some(MissingVariableMembersFix.supportsErrorCode)) {
-      tryAddFixAction(
-        () =>
-          new MissingVariableMembersFix({
-            ts: this.ts,
-            start,
-            end,
-            filePath: fileName,
-            program: this.getProgram(),
-            logger: this.logger,
-          }),
-      )
+      tryAddFixAction(() => new MissingVariableMembersFix(args))
     }
 
     if (errorCodes.some(MissingArgumentMembersFix.supportsErrorCode)) {
-      tryAddFixAction(
-        () =>
-          new MissingArgumentMembersFix({
-            ts: this.ts,
-            start,
-            end,
-            filePath: fileName,
-            program: this.getProgram(),
-            logger: this.logger,
-          }),
-      )
+      tryAddFixAction(() => new MissingArgumentMembersFix(args))
     }
 
     if (errorCodes.some(MissingObjectMembersFix.supportsErrorCode)) {
-      tryAddFixAction(
-        () =>
-          new MissingObjectMembersFix({
-            ts: this.ts,
-            start,
-            end,
-            filePath: fileName,
-            program: this.getProgram(),
-            logger: this.logger,
-          }),
-      )
+      tryAddFixAction(() => new MissingObjectMembersFix(args))
     }
 
     this.logger.info('Done trying to get code fix actions')

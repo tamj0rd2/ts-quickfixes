@@ -3,6 +3,7 @@ import { Logger } from './providers/provider'
 
 export namespace DeclareMissingObjectMembers {
   export const supportedErrorCodes: number[] = [2739, 2741]
+  export const supportsErrorCode = (code: number): boolean => supportedErrorCodes.includes(code)
 
   interface Args extends TSH.NodePosition {
     filePath: string
@@ -11,7 +12,11 @@ export namespace DeclareMissingObjectMembers {
     ts: TSH.ts
   }
 
-  const parsers = [directVariableDeclaration, nestedInsideVariableDeclaration]
+  const parsers = [
+    forVariableDeclaration,
+    // nestedInsideVariableDeclaration,
+    withinVariableDeclaration,
+  ]
 
   export function createFix(args: Args): ts.CodeFixAction {
     const { program, ts } = args
@@ -54,7 +59,7 @@ export namespace DeclareMissingObjectMembers {
     }
   }
 
-  function directVariableDeclaration({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
+  function forVariableDeclaration({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
     const identifier = TSH.cast(errorNode, ts.isIdentifier)
     const variableDeclaration = TSH.cast(identifier.parent, ts.isVariableDeclaration)
     const typeReference = TSH.cast(variableDeclaration.type, ts.isTypeReferenceNode)
@@ -67,28 +72,51 @@ export namespace DeclareMissingObjectMembers {
     return { initializer, symbol }
   }
 
-  function nestedInsideVariableDeclaration({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
+  function withinVariableDeclaration({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
     const identifier = TSH.cast(errorNode, ts.isIdentifier)
     const propertyAssignment = TSH.cast(identifier.parent, ts.isPropertyAssignment)
-    const propertyName = propertyAssignment.name.getText() as ts.__String
-    const initializer = TSH.cast(propertyAssignment.initializer, ts.isObjectLiteralExpression)
+    const wantedPropertyName = propertyAssignment.name.getText()
+    const parentPropertyNames = getParentPropertyNames(ts, propertyAssignment)
 
-    const variableDeclaration = TSH.cast(propertyAssignment.parent.parent, ts.isVariableDeclaration)
+    const variableDeclaration = TSH.findParentNode(propertyAssignment, ts.isVariableDeclaration)
     const typeReference = TSH.cast(variableDeclaration.type, ts.isTypeReferenceNode)
     const typeReferenceIdentifier = TSH.cast(typeReference.typeName, ts.isIdentifier)
 
     const typeChecker = program.getTypeChecker()
     const { symbol: variableSymbol } = typeChecker.getTypeAtLocation(typeReferenceIdentifier)
-    const memberSymbol = variableSymbol.members?.get(propertyName)
-    if (!memberSymbol) {
-      throw new Error(
-        `The parent type ${variableSymbol.name} apparently doesn't have a member ${propertyName}`,
-      )
-    }
 
-    const { symbol } = typeChecker.getTypeAtLocation(memberSymbol.valueDeclaration)
+    const symbol = [wantedPropertyName, ...parentPropertyNames].reduceRight((parentSymbol, propertyName) => {
+      const memberSymbol = parentSymbol.members?.get(propertyName as ts.__String)
+      if (!memberSymbol) throw new Error(`Type ${parentSymbol.name} has no member ${propertyName}`)
+
+      return typeChecker.getTypeAtLocation(memberSymbol.valueDeclaration).symbol
+    }, variableSymbol)
+    const initializer = TSH.cast(propertyAssignment.initializer, ts.isObjectLiteralExpression)
 
     return { initializer, symbol }
+  }
+
+  function getParentPropertyNames(ts: TSH.ts, propertyAssignment: ts.PropertyAssignment): ts.__String[] {
+    const propertyNames: ts.__String[] = []
+
+    let nodePointer: ts.Node = propertyAssignment
+    while (ts.isObjectLiteralExpression(nodePointer.parent)) {
+      const objectLiteral = nodePointer.parent
+      nodePointer = objectLiteral.parent
+
+      if (ts.isPropertyAssignment(nodePointer)) {
+        propertyNames.push(nodePointer.name.getText() as ts.__String)
+        continue
+      }
+
+      if (ts.isVariableDeclaration(nodePointer)) {
+        break
+      }
+
+      throw new Error(`Unhandled case where the initializer is not within a variable declaration`)
+    }
+
+    return propertyNames
   }
 
   interface ObjectInfo {

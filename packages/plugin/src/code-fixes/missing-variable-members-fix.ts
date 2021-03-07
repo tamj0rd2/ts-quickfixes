@@ -13,8 +13,8 @@ export class MissingVariableMembersFix extends CodeFix {
     return MissingVariableMembersFix.supportedErrorCodes.includes(code)
   }
 
-  public readonly fixName = 'declareMissingMembers'
-  public readonly description = 'Declare missing members'
+  public readonly fixName = 'declareMissingVariableMembers'
+  public readonly description = 'Declare missing variable members'
   public readonly changes: ts.FileTextChanges[]
 
   public constructor(args: MissingVariableMembersArgs) {

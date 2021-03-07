@@ -32,6 +32,16 @@ export namespace TSH {
     throw new Error(failureMessage)
   }
 
+  export function findParentNode<T extends ts.Node>(
+    startingNode: ts.Node,
+    predicate: (node: ts.Node) => node is T,
+    failureMessage = 'Node not found',
+  ): T {
+    const parent = startingNode.parent
+    if (!parent) throw new Error(failureMessage ?? 'Could not find a matching parent node')
+    return predicate(parent) ? parent : findParentNode(parent, predicate, failureMessage)
+  }
+
   export function findNodeAtPosition(sourceFile: ts.SourceFile, { start, end }: NodePosition): ts.Node {
     return findChildNode(
       sourceFile,
