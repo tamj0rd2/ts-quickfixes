@@ -51,8 +51,8 @@ export namespace TSH {
     node: ts.Node | undefined,
     assertion: { name: string } & ((node: ts.Node) => node is T),
   ): T {
-    if (!node) throw new Error(`Node assertion failed - ${assertion.name} - the node is undefined`)
-    if (!assertion(node)) throw new Error(`Node assertion failed - ${assertion.name}`)
+    if (!node) throw new Error(`Casting failed - ${assertion.name} - the node is undefined`)
+    if (!assertion(node)) throw new Error(`Casting failed - ${assertion.name}`)
     return node
   }
 

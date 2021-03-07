@@ -63,6 +63,35 @@ describe('declareMissingObjectMembers', () => {
       }`),
     )
   })
+
+  it('can declare members nested in a variable declaration', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
+      interface TargetType {
+        greeting: string
+        name: string
+      }
+
+      interface ParentType {
+        target: TargetType
+      }
+      
+      export const parent: ParentType = { target: ${initializer} }
+    `)
+
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer),
+      errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
+    })
+
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
+          greeting: 'todo',
+          name: 'todo'
+      }`),
+    )
+  })
 })
 
 interface GetNewText {
