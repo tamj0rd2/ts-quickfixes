@@ -12,11 +12,7 @@ export namespace DeclareMissingObjectMembers {
     ts: TSH.ts
   }
 
-  const parsers = [
-    forVariableDeclaration,
-    // nestedInsideVariableDeclaration,
-    withinVariableDeclaration,
-  ]
+  const parsers = [variableDeclarationParser, withinVariableDeclarationParser, withinArray]
 
   export function createFix(args: Args): ts.CodeFixAction {
     const { program, ts } = args
@@ -30,7 +26,7 @@ export namespace DeclareMissingObjectMembers {
       try {
         return parser(args, errorNode)
       } catch (err) {
-        return new Error(result.message + `\n${err.message}`)
+        return new Error(result.message + `\n${err.message} (${parser.name})`)
       }
     }, new Error('Could not parse object info'))
 
@@ -59,7 +55,7 @@ export namespace DeclareMissingObjectMembers {
     }
   }
 
-  function forVariableDeclaration({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
+  function variableDeclarationParser({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
     const identifier = TSH.cast(errorNode, ts.isIdentifier)
     const variableDeclaration = TSH.cast(identifier.parent, ts.isVariableDeclaration)
     const typeReference = TSH.cast(variableDeclaration.type, ts.isTypeReferenceNode)
@@ -72,7 +68,7 @@ export namespace DeclareMissingObjectMembers {
     return { initializer, symbol }
   }
 
-  function withinVariableDeclaration({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
+  function withinVariableDeclarationParser({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
     const identifier = TSH.cast(errorNode, ts.isIdentifier)
     const propertyAssignment = TSH.cast(identifier.parent, ts.isPropertyAssignment)
     const wantedPropertyName = propertyAssignment.name.getText()
@@ -117,6 +113,35 @@ export namespace DeclareMissingObjectMembers {
     }
 
     return propertyNames
+  }
+
+  function withinArray({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
+    // chase up the chain until you reach a stop point (e.g variable declaration)
+    const initializer = TSH.cast(errorNode, ts.isObjectLiteralExpression)
+    const arrayLiteral = TSH.cast(initializer.parent, ts.isArrayLiteralExpression)
+    const propertyAssignment = TSH.cast(arrayLiteral.parent, ts.isPropertyAssignment)
+    const objectLiteral = TSH.cast(propertyAssignment.parent, ts.isObjectLiteralExpression)
+    const variableDeclaration = TSH.cast(objectLiteral.parent, ts.isVariableDeclaration)
+
+    const parents = [initializer, arrayLiteral, propertyAssignment, objectLiteral, variableDeclaration]
+
+    // once at the stop point, chase back down the tree using the types
+    const typeChecker = program.getTypeChecker()
+    const variableType = extractType(ts, typeChecker, variableDeclaration)
+
+    // use data collected to chase down the time back to the original
+
+    throw new Error('nay')
+  }
+
+  function extractType(ts: TSH.ts, typeChecker: ts.TypeChecker, node: ts.Node): ts.Type {
+    if (ts.isVariableDeclaration(node)) {
+      const typeReference = TSH.cast(node.type, ts.isTypeReferenceNode)
+      const typeReferenceIdentifier = TSH.cast(typeReference.typeName, ts.isIdentifier)
+      return typeChecker.getTypeAtLocation(typeReferenceIdentifier)
+    }
+
+    throw new Error(`Not implemented for kind ${ts.SyntaxKind[node.kind]}`)
   }
 
   interface ObjectInfo {
