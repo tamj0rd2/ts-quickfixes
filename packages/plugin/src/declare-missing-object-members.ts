@@ -12,7 +12,7 @@ export namespace DeclareMissingObjectMembers {
     ts: TSH.ts
   }
 
-  const parsers = [variableDeclarationParser, withinVariableDeclarationParser, catchAllParser]
+  const parsers = [withinVariableDeclarationParser, catchAllParser]
 
   export function createFix(args: Args): ts.CodeFixAction {
     const { program, ts } = args
@@ -53,19 +53,6 @@ export namespace DeclareMissingObjectMembers {
       fixAllDescription: undefined,
       fixId: undefined,
     }
-  }
-
-  function variableDeclarationParser({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
-    const identifier = TSH.cast(errorNode, ts.isIdentifier)
-    const variableDeclaration = TSH.cast(identifier.parent, ts.isVariableDeclaration)
-    const typeReference = TSH.cast(variableDeclaration.type, ts.isTypeReferenceNode)
-    const typeReferenceIdentifier = TSH.cast(typeReference.typeName, ts.isIdentifier)
-
-    const typeChecker = program.getTypeChecker()
-    const { symbol } = typeChecker.getTypeAtLocation(typeReferenceIdentifier)
-    const initializer = TSH.cast(variableDeclaration.initializer, ts.isObjectLiteralExpression)
-
-    return { initializer, symbol }
   }
 
   function withinVariableDeclarationParser({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
@@ -167,41 +154,30 @@ export namespace DeclareMissingObjectMembers {
       const node = passedNodes[currentIndex]
 
       if (ts.isVariableDeclaration(node)) {
-        const nextNode = passedNodes[currentIndex - 1]
-        TSH.assert(nextNode, ts.isObjectLiteralExpression)
         const typeReference = TSH.cast(node.type, ts.isTypeReferenceNode)
         capturedSymbol = TSH.deref(ts, typeChecker, typeReference).symbol
-        pointer -= 1 // skipping past the object literal
         continue
       }
 
-      if (!capturedSymbol) throw new Error('No top level symbol somehow...')
-
       if (ts.isPropertyAssignment(node)) {
         const propertyName = node.name.getText()
-        const memberSymbol = capturedSymbol.members?.get(propertyName as ts.__String)
-        if (!memberSymbol) throw new Error(`Type ${capturedSymbol.name} has no member ${propertyName}`)
+        const memberSymbol = capturedSymbol?.members?.get(propertyName as ts.__String)
+        if (!memberSymbol) throw new Error(`Type ${capturedSymbol?.name} has no member ${propertyName}`)
         capturedSymbol = memberSymbol
         continue
       }
 
       if (ts.isArrayLiteralExpression(node)) {
-        const propertySignature = TSH.cast(capturedSymbol.valueDeclaration, ts.isPropertySignature)
+        const propertySignature = TSH.cast(capturedSymbol?.valueDeclaration, ts.isPropertySignature)
         const arrayType = TSH.cast(propertySignature.type, ts.isArrayTypeNode)
         const elementType = TSH.cast(arrayType.elementType, ts.isTypeReferenceNode)
         capturedSymbol = TSH.deref(ts, typeChecker, elementType).symbol
         continue
       }
-
-      // end of the road
-      if (ts.isObjectLiteralExpression(node) && currentIndex === 0) {
-        return capturedSymbol
-      }
-
-      throw new Error('unhandled path')
     }
 
-    throw new Error('nay')
+    if (capturedSymbol) return capturedSymbol
+    throw new Error('No symbol captured')
   }
 
   interface ObjectInfo {

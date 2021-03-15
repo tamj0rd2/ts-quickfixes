@@ -129,7 +129,7 @@ describe('declareMissingObjectMembers', () => {
   })
 
   describe('within an array', () => {
-    it.only('can declare members in an array inside a variable declaration', () => {
+    it('can declare members in an array inside a variable declaration', () => {
       const initializer = '{}'
       const [filePath, fileContent] = FsMocker.addFile(`
         interface TargetType {
