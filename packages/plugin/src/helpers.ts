@@ -66,6 +66,22 @@ export namespace TSH {
     return node
   }
 
+  export function deref(
+    ts: TSH.ts,
+    typeChecker: ts.TypeChecker,
+    typeReference: ts.TypeReferenceNode,
+  ): ts.Type {
+    const typeReferenceIdentifier = TSH.cast(typeReference.typeName, ts.isIdentifier)
+    return typeChecker.getTypeAtLocation(typeReferenceIdentifier)
+  }
+
+  export function assert<T extends ts.Node>(
+    node: ts.Node | undefined,
+    assertion: { name: string } & ((node: ts.Node) => node is T),
+  ): asserts node is T {
+    cast(node, assertion)
+  }
+
   export namespace Generate {
     export function objectLiteral(
       ts: ts,

@@ -12,7 +12,7 @@ export namespace DeclareMissingObjectMembers {
     ts: TSH.ts
   }
 
-  const parsers = [variableDeclarationParser, withinVariableDeclarationParser, withinArray]
+  const parsers = [variableDeclarationParser, withinVariableDeclarationParser, withinArrayParser]
 
   export function createFix(args: Args): ts.CodeFixAction {
     const { program, ts } = args
@@ -115,7 +115,7 @@ export namespace DeclareMissingObjectMembers {
     return propertyNames
   }
 
-  function withinArray({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
+  function withinArrayParser({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
     // chase up the chain until you reach a stop point (e.g variable declaration)
     const initializer = TSH.cast(errorNode, ts.isObjectLiteralExpression)
     const arrayLiteral = TSH.cast(initializer.parent, ts.isArrayLiteralExpression)
@@ -123,25 +123,58 @@ export namespace DeclareMissingObjectMembers {
     const objectLiteral = TSH.cast(propertyAssignment.parent, ts.isObjectLiteralExpression)
     const variableDeclaration = TSH.cast(objectLiteral.parent, ts.isVariableDeclaration)
 
-    const parents = [initializer, arrayLiteral, propertyAssignment, objectLiteral, variableDeclaration]
-
-    // once at the stop point, chase back down the tree using the types
+    const passedNodes = [initializer, arrayLiteral, propertyAssignment, objectLiteral, variableDeclaration]
     const typeChecker = program.getTypeChecker()
-    const variableType = extractType(ts, typeChecker, variableDeclaration)
-
-    // use data collected to chase down the time back to the original
-
-    throw new Error('nay')
+    return { initializer, symbol: stepDown(ts, typeChecker, passedNodes) }
   }
 
-  function extractType(ts: TSH.ts, typeChecker: ts.TypeChecker, node: ts.Node): ts.Type {
-    if (ts.isVariableDeclaration(node)) {
-      const typeReference = TSH.cast(node.type, ts.isTypeReferenceNode)
-      const typeReferenceIdentifier = TSH.cast(typeReference.typeName, ts.isIdentifier)
-      return typeChecker.getTypeAtLocation(typeReferenceIdentifier)
+  function stepDown(ts: TSH.ts, typeChecker: ts.TypeChecker, passedNodes: ts.Node[]): ts.Symbol {
+    let pointer = passedNodes.length - 1
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    let capturedSymbol: ts.Symbol | undefined
+
+    while (pointer >= 0) {
+      const currentIndex = pointer
+      pointer -= 1
+
+      const node = passedNodes[currentIndex]
+
+      if (ts.isVariableDeclaration(node)) {
+        const nextNode = passedNodes[currentIndex - 1]
+        TSH.assert(nextNode, ts.isObjectLiteralExpression)
+        const typeReference = TSH.cast(node.type, ts.isTypeReferenceNode)
+        capturedSymbol = TSH.deref(ts, typeChecker, typeReference).symbol
+        pointer -= 1 // skipping past the object literal
+        continue
+      }
+
+      if (!capturedSymbol) throw new Error('No top level symbol somehow...')
+
+      if (ts.isPropertyAssignment(node)) {
+        const propertyName = node.name.getText()
+        const memberSymbol = capturedSymbol.members?.get(propertyName as ts.__String)
+        if (!memberSymbol) throw new Error(`Type ${capturedSymbol.name} has no member ${propertyName}`)
+        capturedSymbol = memberSymbol
+        continue
+      }
+
+      if (ts.isArrayLiteralExpression(node)) {
+        const propertySignature = TSH.cast(capturedSymbol.valueDeclaration, ts.isPropertySignature)
+        const arrayType = TSH.cast(propertySignature.type, ts.isArrayTypeNode)
+        const elementType = TSH.cast(arrayType.elementType, ts.isTypeReferenceNode)
+        capturedSymbol = TSH.deref(ts, typeChecker, elementType).symbol
+        continue
+      }
+
+      // end of the road
+      if (ts.isObjectLiteralExpression(node) && currentIndex === 0) {
+        return capturedSymbol
+      }
+
+      throw new Error('unhandled path')
     }
 
-    throw new Error(`Not implemented for kind ${ts.SyntaxKind[node.kind]}`)
+    throw new Error('nay')
   }
 
   interface ObjectInfo {
