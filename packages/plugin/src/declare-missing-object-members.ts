@@ -105,9 +105,12 @@ export namespace DeclareMissingObjectMembers {
   function catchAllParser(args: Args, errorNode: ts.Node): ObjectInfo {
     const { program, ts } = args
     const initializer = findInitializer(ts, errorNode)
-    const passedNodes = climbUpFromInitializerAndCollectNodes(args, initializer)
+    const passedNodes = collectNodesUpToFirstRelatedTypeDeclaration(args, initializer)
     const typeChecker = program.getTypeChecker()
-    return { initializer, symbol: stepDown(ts, typeChecker, [...passedNodes].reverse()) }
+    const expectedSymbol = deriveExpectedSymbolFromPassedNodes(args, typeChecker, passedNodes)
+    if (!expectedSymbol) throw new Error('Could not figure out what the expected symbol is')
+
+    return { initializer, symbol: expectedSymbol }
   }
 
   function findInitializer(ts: TSH.ts, errorNode: ts.Node): ts.ObjectLiteralExpression {
@@ -125,7 +128,9 @@ export namespace DeclareMissingObjectMembers {
     throw new Error(`Unhandled errorNode type ${ts.SyntaxKind[errorNode.kind]}`)
   }
 
-  function climbUpFromInitializerAndCollectNodes(
+  /** this function returns them in reverse order (the initializer is last) because attempting to reverse it later on
+   * casuses memory leaks */
+  function collectNodesUpToFirstRelatedTypeDeclaration(
     { ts }: Args,
     initializer: ts.ObjectLiteralExpression,
   ): ts.Node[] {
@@ -136,48 +141,42 @@ export namespace DeclareMissingObjectMembers {
       const node = previousNode.parent
       collectedNodes.unshift(node)
 
+      // TODO: when I redo function arguments, there'd be some extra logic here to break out
       if (ts.isVariableDeclaration(node)) break
     }
 
     return collectedNodes
   }
 
-  function stepDown(ts: TSH.ts, typeChecker: ts.TypeChecker, passedNodes: ts.Node[]): ts.Symbol {
-    let pointer = passedNodes.length - 1
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let capturedSymbol: ts.Symbol | undefined
-
-    while (pointer >= 0) {
-      const currentIndex = pointer
-      pointer -= 1
-
-      const node = passedNodes[currentIndex]
+  function deriveExpectedSymbolFromPassedNodes(
+    { ts }: Args,
+    typeChecker: ts.TypeChecker,
+    passedNodes: ts.Node[],
+  ): ts.Symbol | undefined {
+    return passedNodes.reduce<ts.Symbol | undefined>((trackedSymbol, node) => {
+      // logger.logNode(node)
 
       if (ts.isVariableDeclaration(node)) {
         const typeReference = TSH.cast(node.type, ts.isTypeReferenceNode)
-        capturedSymbol = TSH.deref(ts, typeChecker, typeReference).symbol
-        continue
+        return TSH.deref(ts, typeChecker, typeReference).symbol
       }
 
       if (ts.isPropertyAssignment(node)) {
         const propertyName = node.name.getText()
-        const memberSymbol = capturedSymbol?.members?.get(propertyName as ts.__String)
-        if (!memberSymbol) throw new Error(`Type ${capturedSymbol?.name} has no member ${propertyName}`)
-        capturedSymbol = memberSymbol
-        continue
+        const memberSymbol = trackedSymbol?.members?.get(propertyName as ts.__String)
+        if (!memberSymbol) throw new Error(`Type ${trackedSymbol?.name} has no member ${propertyName}`)
+        return memberSymbol
       }
 
       if (ts.isArrayLiteralExpression(node)) {
-        const propertySignature = TSH.cast(capturedSymbol?.valueDeclaration, ts.isPropertySignature)
+        const propertySignature = TSH.cast(trackedSymbol?.valueDeclaration, ts.isPropertySignature)
         const arrayType = TSH.cast(propertySignature.type, ts.isArrayTypeNode)
         const elementType = TSH.cast(arrayType.elementType, ts.isTypeReferenceNode)
-        capturedSymbol = TSH.deref(ts, typeChecker, elementType).symbol
-        continue
+        return TSH.deref(ts, typeChecker, elementType).symbol
       }
-    }
 
-    if (capturedSymbol) return capturedSymbol
-    throw new Error('No symbol captured')
+      return trackedSymbol
+    }, undefined)
   }
 
   interface ObjectInfo {

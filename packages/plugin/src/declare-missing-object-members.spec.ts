@@ -128,34 +128,32 @@ describe('declareMissingObjectMembers', () => {
     })
   })
 
-  describe('within an array', () => {
-    it('can declare members in an array inside a variable declaration', () => {
-      const initializer = '{}'
-      const [filePath, fileContent] = FsMocker.addFile(`
-        interface TargetType {
-          greeting: string
-          name: string
-        }
-  
-        interface ParentType {
-          target: TargetType[]
-        }
-        
-        export const parent: ParentType = { target: [${initializer}] }
-      `)
+  it('can declare members in an array inside a variable declaration', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
+      interface TargetType {
+        greeting: string
+        name: string
+      }
 
-      const newText = getNewText({
-        filePath,
-        initializerPos: getNodeRange(fileContent, initializer),
-      })
+      interface ParentType {
+        target: TargetType[]
+      }
+      
+      export const parent: ParentType = { target: [${initializer}] }
+    `)
 
-      expect(newText).toBe(
-        stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-      )
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer),
     })
+
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
+          greeting: 'todo',
+          name: 'todo'
+      }`),
+    )
   })
 })
 
