@@ -12,7 +12,7 @@ export namespace DeclareMissingObjectMembers {
     ts: TSH.ts
   }
 
-  const parsers = [variableDeclarationParser, withinVariableDeclarationParser, withinArrayParser]
+  const parsers = [variableDeclarationParser, withinVariableDeclarationParser, catchAllParser]
 
   export function createFix(args: Args): ts.CodeFixAction {
     const { program, ts } = args
@@ -71,6 +71,7 @@ export namespace DeclareMissingObjectMembers {
   function withinVariableDeclarationParser({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
     const identifier = TSH.cast(errorNode, ts.isIdentifier)
     const propertyAssignment = TSH.cast(identifier.parent, ts.isPropertyAssignment)
+    const initializer = TSH.cast(propertyAssignment.initializer, ts.isObjectLiteralExpression)
     const wantedPropertyName = propertyAssignment.name.getText()
     const parentPropertyNames = getParentPropertyNames(ts, propertyAssignment)
 
@@ -87,7 +88,6 @@ export namespace DeclareMissingObjectMembers {
 
       return typeChecker.getTypeAtLocation(memberSymbol.valueDeclaration).symbol
     }, variableSymbol)
-    const initializer = TSH.cast(propertyAssignment.initializer, ts.isObjectLiteralExpression)
 
     return { initializer, symbol }
   }
@@ -115,17 +115,44 @@ export namespace DeclareMissingObjectMembers {
     return propertyNames
   }
 
-  function withinArrayParser({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
-    // chase up the chain until you reach a stop point (e.g variable declaration)
-    const initializer = TSH.cast(errorNode, ts.isObjectLiteralExpression)
-    const arrayLiteral = TSH.cast(initializer.parent, ts.isArrayLiteralExpression)
-    const propertyAssignment = TSH.cast(arrayLiteral.parent, ts.isPropertyAssignment)
-    const objectLiteral = TSH.cast(propertyAssignment.parent, ts.isObjectLiteralExpression)
-    const variableDeclaration = TSH.cast(objectLiteral.parent, ts.isVariableDeclaration)
-
-    const passedNodes = [initializer, arrayLiteral, propertyAssignment, objectLiteral, variableDeclaration]
+  function catchAllParser(args: Args, errorNode: ts.Node): ObjectInfo {
+    const { program, ts } = args
+    const initializer = findInitializer(ts, errorNode)
+    const passedNodes = climbUpFromInitializerAndCollectNodes(args, initializer)
     const typeChecker = program.getTypeChecker()
-    return { initializer, symbol: stepDown(ts, typeChecker, passedNodes) }
+    return { initializer, symbol: stepDown(ts, typeChecker, [...passedNodes].reverse()) }
+  }
+
+  function findInitializer(ts: TSH.ts, errorNode: ts.Node): ts.ObjectLiteralExpression {
+    if (
+      ts.isIdentifier(errorNode) &&
+      (ts.isVariableDeclaration(errorNode.parent) || ts.isPropertyAssignment(errorNode.parent))
+    ) {
+      return TSH.cast(errorNode.parent.initializer, ts.isObjectLiteralExpression)
+    }
+
+    if (ts.isObjectLiteralExpression(errorNode)) {
+      return errorNode
+    }
+
+    throw new Error(`Unhandled errorNode type ${ts.SyntaxKind[errorNode.kind]}`)
+  }
+
+  function climbUpFromInitializerAndCollectNodes(
+    { ts }: Args,
+    initializer: ts.ObjectLiteralExpression,
+  ): ts.Node[] {
+    const collectedNodes: ts.Node[] = [initializer]
+
+    while (collectedNodes[0].parent) {
+      const previousNode = collectedNodes[0]
+      const node = previousNode.parent
+      collectedNodes.unshift(node)
+
+      if (ts.isVariableDeclaration(node)) break
+    }
+
+    return collectedNodes
   }
 
   function stepDown(ts: TSH.ts, typeChecker: ts.TypeChecker, passedNodes: ts.Node[]): ts.Symbol {
