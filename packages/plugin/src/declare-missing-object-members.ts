@@ -19,10 +19,9 @@ export namespace DeclareMissingObjectMembers {
     const sourceFile = TSH.getSourceFile(args.filePath, program)
     const errorNode = TSH.findNodeAtPosition(sourceFile, args)
 
-    const infoOrError = catchAllParser(args, errorNode)
-
-    if (infoOrError instanceof Error) throw infoOrError
-    const { initializer, symbol } = infoOrError
+    const initializer = findInitializer(ts, errorNode)
+    const passedNodes = collectNodesUpToFirstRelatedTypeDeclaration(args, initializer)
+    const symbol = deriveExpectedSymbolFromPassedNodes(args, typeChecker, passedNodes)
 
     const newInitializer = TSH.Generate.objectLiteral(ts, typeChecker, sourceFile, initializer, symbol)
     return {
@@ -44,17 +43,6 @@ export namespace DeclareMissingObjectMembers {
       fixAllDescription: undefined,
       fixId: undefined,
     }
-  }
-
-  function catchAllParser(args: Args, errorNode: ts.Node): ObjectInfo {
-    const { program, ts } = args
-    const initializer = findInitializer(ts, errorNode)
-    const passedNodes = collectNodesUpToFirstRelatedTypeDeclaration(args, initializer)
-    const typeChecker = program.getTypeChecker()
-    const expectedSymbol = deriveExpectedSymbolFromPassedNodes(args, typeChecker, passedNodes)
-    if (!expectedSymbol) throw new Error('Could not figure out what the expected symbol is')
-
-    return { initializer, symbol: expectedSymbol }
   }
 
   function findInitializer(ts: TSH.ts, errorNode: ts.Node): ts.ObjectLiteralExpression {
@@ -96,8 +84,8 @@ export namespace DeclareMissingObjectMembers {
     { ts }: Args,
     typeChecker: ts.TypeChecker,
     passedNodes: ts.Node[],
-  ): ts.Symbol | undefined {
-    return passedNodes.reduce<ts.Symbol | undefined>((trackedSymbol, node, index) => {
+  ): ts.Symbol {
+    const expectedSymbol = passedNodes.reduce<ts.Symbol | undefined>((trackedSymbol, node, index) => {
       // treat the top level nodes first, since all the other nodes would depend on a previous symbol + declaration
       if (ts.isVariableDeclaration(node)) {
         const identifier = TSH.cast(node.name, ts.isIdentifier)
@@ -133,10 +121,8 @@ export namespace DeclareMissingObjectMembers {
 
       throw new Error(`Unhandled node kind ${ts.SyntaxKind[node.kind]}`)
     }, undefined)
-  }
 
-  interface ObjectInfo {
-    initializer: ts.ObjectLiteralExpression
-    symbol: ts.Symbol
+    if (!expectedSymbol) throw new Error('Could not figure out what the expected symbol is')
+    return expectedSymbol
   }
 }
