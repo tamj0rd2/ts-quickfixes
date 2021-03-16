@@ -88,19 +88,25 @@ export namespace TSH {
       if (!expectedSymbol.members) throw new Error('Symbol has no members property')
       const { symbol: initializerSymbol } = typeChecker.getTypeAtLocation(initializer)
 
-      const newProperties: ts.PropertyAssignment[] = []
-      expectedSymbol.members.forEach((memberSymbol) => {
-        if (initializerSymbol.members?.has(memberSymbol.name as ts.__String)) return
-        newProperties.push(
+      const newProperties = new Map<ts.__String, ts.PropertyAssignment>()
+      function addNewPropertyAssignment(memberSymbol: ts.Symbol): void {
+        const memberName = memberSymbol.name as ts.__String
+        if (initializerSymbol.members?.has(memberName) || newProperties.has(memberName)) return
+        newProperties.set(
+          memberName,
           ts.factory.createPropertyAssignment(
             memberSymbol.name,
             expressionFromSymbol(memberSymbol, ts, typeChecker),
           ),
         )
-      })
+      }
+
+      expectedSymbol.members.forEach(addNewPropertyAssignment)
+      const extras = getInheritedMemberSymbols(ts, typeChecker, expectedSymbol)
+      extras.forEach(addNewPropertyAssignment)
 
       const replacedInitializer = ts.factory.createObjectLiteralExpression(
-        [...initializer.properties, ...newProperties],
+        [...initializer.properties, ...newProperties.values()],
         true,
       )
 
@@ -110,6 +116,29 @@ export namespace TSH {
           { substituteNode: (_, node) => (node === initializer ? replacedInitializer : node) },
         )
         .printNode(ts.EmitHint.Unspecified, initializer, sourceFile)
+    }
+
+    function getInheritedMemberSymbols(
+      ts: TSH.ts,
+      typeChecker: ts.TypeChecker,
+      symbol: ts.Symbol,
+    ): ts.Symbol[] {
+      const symbolDeclarationNode = symbol.valueDeclaration ?? symbol.declarations[0]
+      const members: ts.Symbol[] = []
+
+      if (ts.isInterfaceDeclaration(symbolDeclarationNode)) {
+        const inheritedMemberSymbols = symbolDeclarationNode.heritageClauses
+          ?.flatMap((clause) => clause.types.map((type) => type.expression))
+          .filter(ts.isIdentifier)
+          .map((s) => typeChecker.getTypeAtLocation(s).symbol)
+          ?.filter((s): s is ts.Symbol => !!s)
+          .flatMap((inheritedSymbol) => getInheritedMemberSymbols(ts, typeChecker, inheritedSymbol))
+
+        members.push(...(inheritedMemberSymbols ?? []))
+      }
+
+      symbol.members?.forEach((s) => members.push(s))
+      return members
     }
 
     function expressionFromSymbol(

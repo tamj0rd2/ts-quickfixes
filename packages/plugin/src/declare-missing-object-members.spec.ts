@@ -3,6 +3,7 @@ import { DeclareMissingObjectMembers } from './declare-missing-object-members'
 import { TSH } from './helpers'
 import {
   createDummyLogger,
+  createImportStatement,
   createTestProgram,
   FsMocker,
   getNodeRange,
@@ -36,6 +37,50 @@ describe('declareMissingObjectMembers', () => {
             name: 'tam',
             greeting: 'todo',
             age: 0
+        }`),
+      )
+    })
+
+    // the getInheritedMemberSymbols helper should probably be tested instead of this.
+    it('can declare missing members for a variable declaration that extends a type from another file', () => {
+      const initializer = `{ name: 'tam' }`
+      const [importedFilePath] = FsMocker.addFile(`
+        export interface GrandParentType {
+          age: number
+        }
+
+        export interface ParentType extends GrandParentType {
+          name: string
+        }
+      `)
+
+      const [targetFilePath, fileContent] = FsMocker.addFile(`
+        ${createImportStatement('ParentType', importedFilePath)}
+
+        interface SiblingType {
+          isAlive: boolean
+        }
+
+        interface TargetType extends ParentType, SiblingType {
+          greeting: string
+        }
+        
+        export const target: TargetType = ${initializer}
+      `)
+
+      const newText = getNewText({
+        filePath: targetFilePath,
+        initializerPos: getNodeRange(fileContent, initializer),
+        errorPos: getNodeRange(fileContent, 'target'),
+        additionalFiles: [importedFilePath],
+      })
+
+      expect(newText).toBe(
+        stripLeadingWhitespace(`{
+            name: 'tam',
+            greeting: 'todo',
+            age: 0,
+            isAlive: false
         }`),
       )
     })
