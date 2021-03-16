@@ -66,15 +66,8 @@ export namespace TSH {
     return node
   }
 
-  export function deref(
-    ts: TSH.ts,
-    typeChecker: ts.TypeChecker,
-    typeReference: ts.TypeReferenceNode,
-  ): ts.Symbol {
-    const typeReferenceIdentifier = TSH.cast(typeReference.typeName, ts.isIdentifier)
-    const symbol = typeChecker.getSymbolAtLocation(typeReferenceIdentifier)
-    if (symbol) return symbol
-    throw new Error(`Could not get a symbol for type reference ${typeReference.getText()}`)
+  export function deref(typeChecker: ts.TypeChecker, node: ts.TypeNode): ts.Symbol {
+    return typeChecker.getTypeFromTypeNode(node).symbol
   }
 
   export function assert<T extends ts.Node>(

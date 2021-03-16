@@ -5,11 +5,12 @@ export namespace DeclareMissingObjectMembers {
   export const supportedErrorCodes: number[] = [2739, 2741]
   export const supportsErrorCode = (code: number): boolean => supportedErrorCodes.includes(code)
 
-  interface Args extends TSH.NodePosition {
+  export interface Args extends TSH.NodePosition {
     filePath: string
     program: ts.Program
     logger: Logger
     ts: TSH.ts
+    typeChecker: ts.TypeChecker
   }
 
   export function createFix(args: Args): ts.CodeFixAction {
@@ -92,70 +93,44 @@ export namespace DeclareMissingObjectMembers {
   }
 
   function deriveExpectedSymbolFromPassedNodes(
-    { ts, logger }: Args,
+    { ts }: Args,
     typeChecker: ts.TypeChecker,
     passedNodes: ts.Node[],
   ): ts.Symbol | undefined {
-    return passedNodes.reduce<ts.Symbol | undefined>((trackedSymbol, node) => {
-      logger.logNode(node)
-      const previousSymbolDeclaration = trackedSymbol?.valueDeclaration ?? trackedSymbol?.declarations[0]
-
+    return passedNodes.reduce<ts.Symbol | undefined>((trackedSymbol, node, index) => {
+      // treat the top level nodes first, since all the other nodes would depend on a previous symbol + declaration
       if (ts.isVariableDeclaration(node)) {
         const identifier = TSH.cast(node.name, ts.isIdentifier)
         return typeChecker.getSymbolAtLocation(identifier)
       }
 
-      if (ts.isObjectLiteralExpression(node) && previousSymbolDeclaration) {
-        if (ts.isVariableDeclaration(previousSymbolDeclaration)) {
-          const typeReference = TSH.cast(previousSymbolDeclaration.type, ts.isTypeReferenceNode)
-          return TSH.deref(ts, typeChecker, typeReference)
+      if (!trackedSymbol) throw new Error('No tracked symbol')
+      const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
+      if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
+
+      if (ts.isObjectLiteralExpression(node)) {
+        if (
+          (ts.isVariableDeclaration(trackedDeclaration) || ts.isPropertySignature(trackedDeclaration)) &&
+          trackedDeclaration.type
+        ) {
+          return TSH.deref(typeChecker, trackedDeclaration.type)
         }
       }
 
       if (ts.isPropertyAssignment(node)) {
-        TSH.assert(previousSymbolDeclaration, ts.isInterfaceDeclaration)
         return trackedSymbol?.members?.get(node.name.getText() as ts.__String)
       }
 
       if (ts.isArrayLiteralExpression(node)) {
-        const propertySignature = TSH.cast(previousSymbolDeclaration, ts.isPropertySignature)
+        const propertySignature = TSH.cast(trackedDeclaration, ts.isPropertySignature)
         const arrayType = TSH.cast(propertySignature.type, ts.isArrayTypeNode)
-        const elementType = TSH.cast(arrayType.elementType, ts.isTypeReferenceNode)
-        const thingy = TSH.deref(ts, typeChecker, elementType)
-        console.log(thingy)
-        return thingy
+        return TSH.deref(typeChecker, arrayType.elementType)
       }
 
-      // if (ts.isPropertyAssignment(node)) {
-      //   const propertyName = node.name.getText()
-      //   const memberSymbol = trackedSymbol?.members?.get(propertyName as ts.__String)
-      //   if (!memberSymbol) throw new Error(`Type ${trackedSymbol?.name} has no member ${propertyName}`)
+      if (index === passedNodes.length - 1) {
+        return trackedSymbol
+      }
 
-      //   const propertySignature = TSH.cast(memberSymbol.valueDeclaration, ts.isPropertySignature)
-      //   if (!propertySignature.type) throw new Error(`Property signature for ${propertyName} has no type`)
-
-      //   if (ts.isTypeReferenceNode(propertySignature.type)) {
-      //     return TSH.deref(ts, typeChecker, propertySignature.type).symbol
-      //   }
-
-      //   if (ts.isArrayTypeNode(propertySignature.type)) {
-      //     const typeReference = TSH.cast(propertySignature.type.elementType, ts.isTypeReferenceNode)
-      //     return TSH.deref(ts, typeChecker, typeReference).symbol
-      //   }
-
-      //   throw new Error('Unhandled property assignment case')
-      // }
-
-      // if (ts.isArrayLiteralExpression(node)) {
-      //   console.log(trackedSymbol?.name, trackedSymbol?.valueDeclaration.kind)
-      //   throw new Error('wtf loool')
-      //   // logger.logNode(trackedSymbol?.valueDeclaration!)
-
-      //   // const propertySignature = TSH.cast(trackedSymbol?.valueDeclaration, ts.isPropertySignature)
-      //   // const arrayType = TSH.cast(propertySignature.type, ts.isArrayTypeNode)
-      //   // const elementType = TSH.cast(arrayType.elementType, ts.isTypeReferenceNode)
-      //   // return TSH.deref(ts, typeChecker, elementType).symbol
-      // }
       throw new Error(`Unhandled node kind ${ts.SyntaxKind[node.kind]}`)
     }, undefined)
   }

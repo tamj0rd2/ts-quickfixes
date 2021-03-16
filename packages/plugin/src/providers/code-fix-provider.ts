@@ -1,6 +1,3 @@
-import { MissingArgumentMembersFix } from '../code-fixes/missing-argument-members-fix'
-import { MissingObjectMembersFix } from '../code-fixes/missing-object-members-fix'
-import { MissingVariableMembersFix } from '../code-fixes/missing-variable-members-fix'
 import { DeclareMissingObjectMembers } from '../declare-missing-object-members'
 import { BaseProvider } from './provider'
 
@@ -15,12 +12,24 @@ export class CodeFixProvider extends BaseProvider {
   ): readonly ts.CodeFixAction[] => {
     this.logger.info('Trying to get code fix actions')
     this.logger.info({ start, end, fileName, errorCodes })
+    const program = this.getProgram()
+    const args = {
+      ts: this.ts,
+      start,
+      end,
+      filePath: fileName,
+      program: program,
+      logger: this.logger,
+      typeChecker: program.getTypeChecker(),
+    }
 
     const customActions: ts.CodeFixAction[] = []
 
-    const tryAddFixAction = (fixFactory: () => ts.CodeFixAction): void => {
+    const tryAddFixAction = (
+      fixFactory: (args: DeclareMissingObjectMembers.Args) => ts.CodeFixAction,
+    ): void => {
       try {
-        const action = fixFactory()
+        const action = fixFactory(args)
         customActions.push(action)
         this.logger.info(`Fix ${action.fixName} will be available for selection`)
       } catch (err) {
@@ -28,30 +37,8 @@ export class CodeFixProvider extends BaseProvider {
       }
     }
 
-    const args = {
-      ts: this.ts,
-      start,
-      end,
-      filePath: fileName,
-      program: this.getProgram(),
-      logger: this.logger,
-    }
-
-    // TODO: should be ELIF
     if (errorCodes.some(DeclareMissingObjectMembers.supportsErrorCode)) {
-      tryAddFixAction(() => DeclareMissingObjectMembers.createFix(args))
-    }
-
-    if (errorCodes.some(MissingVariableMembersFix.supportsErrorCode)) {
-      tryAddFixAction(() => new MissingVariableMembersFix(args))
-    }
-
-    if (errorCodes.some(MissingArgumentMembersFix.supportsErrorCode)) {
-      tryAddFixAction(() => new MissingArgumentMembersFix(args))
-    }
-
-    if (errorCodes.some(MissingObjectMembersFix.supportsErrorCode)) {
-      tryAddFixAction(() => new MissingObjectMembersFix(args))
+      tryAddFixAction(DeclareMissingObjectMembers.createFix)
     }
 
     this.logger.info('Done trying to get code fix actions')
