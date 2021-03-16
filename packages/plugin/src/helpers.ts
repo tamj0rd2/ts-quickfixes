@@ -70,9 +70,11 @@ export namespace TSH {
     ts: TSH.ts,
     typeChecker: ts.TypeChecker,
     typeReference: ts.TypeReferenceNode,
-  ): ts.Type {
+  ): ts.Symbol {
     const typeReferenceIdentifier = TSH.cast(typeReference.typeName, ts.isIdentifier)
-    return typeChecker.getTypeAtLocation(typeReferenceIdentifier)
+    const symbol = typeChecker.getSymbolAtLocation(typeReferenceIdentifier)
+    if (symbol) return symbol
+    throw new Error(`Could not get a symbol for type reference ${typeReference.getText()}`)
   }
 
   export function assert<T extends ts.Node>(
@@ -159,7 +161,7 @@ export namespace TSH {
       }
 
       if (type.flags & ts.TypeFlags.EnumLiteral && type.isUnionOrIntersection() && type.aliasSymbol) {
-        const firstEnumMember = type.aliasSymbol.exports?.keys().next().value.toString()
+        const firstEnumMember = (type.aliasSymbol.exports?.keys().next().value as ts.__String)?.toString()
 
         return firstEnumMember
           ? ts.factory.createPropertyAccessExpression(

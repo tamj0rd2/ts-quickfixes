@@ -12,23 +12,13 @@ export namespace DeclareMissingObjectMembers {
     ts: TSH.ts
   }
 
-  const parsers = [withinVariableDeclarationParser, catchAllParser]
-
   export function createFix(args: Args): ts.CodeFixAction {
     const { program, ts } = args
     const typeChecker = program.getTypeChecker()
     const sourceFile = TSH.getSourceFile(args.filePath, program)
     const errorNode = TSH.findNodeAtPosition(sourceFile, args)
 
-    const infoOrError = parsers.reduce<ObjectInfo | Error>((result, parser) => {
-      if (!(result instanceof Error)) return result
-
-      try {
-        return parser(args, errorNode)
-      } catch (err) {
-        return new Error(result.message + `\n${err.message} (${parser.name})`)
-      }
-    }, new Error('Could not parse object info'))
+    const infoOrError = catchAllParser(args, errorNode)
 
     if (infoOrError instanceof Error) throw infoOrError
     const { initializer, symbol } = infoOrError
@@ -53,53 +43,6 @@ export namespace DeclareMissingObjectMembers {
       fixAllDescription: undefined,
       fixId: undefined,
     }
-  }
-
-  function withinVariableDeclarationParser({ program, ts }: Args, errorNode: ts.Node): ObjectInfo {
-    const identifier = TSH.cast(errorNode, ts.isIdentifier)
-    const propertyAssignment = TSH.cast(identifier.parent, ts.isPropertyAssignment)
-    const initializer = TSH.cast(propertyAssignment.initializer, ts.isObjectLiteralExpression)
-    const wantedPropertyName = propertyAssignment.name.getText()
-    const parentPropertyNames = getParentPropertyNames(ts, propertyAssignment)
-
-    const variableDeclaration = TSH.findParentNode(propertyAssignment, ts.isVariableDeclaration)
-    const typeReference = TSH.cast(variableDeclaration.type, ts.isTypeReferenceNode)
-    const typeReferenceIdentifier = TSH.cast(typeReference.typeName, ts.isIdentifier)
-
-    const typeChecker = program.getTypeChecker()
-    const { symbol: variableSymbol } = typeChecker.getTypeAtLocation(typeReferenceIdentifier)
-
-    const symbol = [wantedPropertyName, ...parentPropertyNames].reduceRight((parentSymbol, propertyName) => {
-      const memberSymbol = parentSymbol.members?.get(propertyName as ts.__String)
-      if (!memberSymbol) throw new Error(`Type ${parentSymbol.name} has no member ${propertyName}`)
-
-      return typeChecker.getTypeAtLocation(memberSymbol.valueDeclaration).symbol
-    }, variableSymbol)
-
-    return { initializer, symbol }
-  }
-
-  function getParentPropertyNames(ts: TSH.ts, propertyAssignment: ts.PropertyAssignment): ts.__String[] {
-    const propertyNames: ts.__String[] = []
-
-    let nodePointer: ts.Node = propertyAssignment
-    while (ts.isObjectLiteralExpression(nodePointer.parent)) {
-      const objectLiteral = nodePointer.parent
-      nodePointer = objectLiteral.parent
-
-      if (ts.isPropertyAssignment(nodePointer)) {
-        propertyNames.push(nodePointer.name.getText() as ts.__String)
-        continue
-      }
-
-      if (ts.isVariableDeclaration(nodePointer)) {
-        break
-      }
-
-      throw new Error(`Unhandled case where the initializer is not within a variable declaration`)
-    }
-
-    return propertyNames
   }
 
   function catchAllParser(args: Args, errorNode: ts.Node): ObjectInfo {
@@ -149,33 +92,71 @@ export namespace DeclareMissingObjectMembers {
   }
 
   function deriveExpectedSymbolFromPassedNodes(
-    { ts }: Args,
+    { ts, logger }: Args,
     typeChecker: ts.TypeChecker,
     passedNodes: ts.Node[],
   ): ts.Symbol | undefined {
     return passedNodes.reduce<ts.Symbol | undefined>((trackedSymbol, node) => {
-      // logger.logNode(node)
+      logger.logNode(node)
+      const previousSymbolDeclaration = trackedSymbol?.valueDeclaration ?? trackedSymbol?.declarations[0]
 
       if (ts.isVariableDeclaration(node)) {
-        const typeReference = TSH.cast(node.type, ts.isTypeReferenceNode)
-        return TSH.deref(ts, typeChecker, typeReference).symbol
+        const identifier = TSH.cast(node.name, ts.isIdentifier)
+        return typeChecker.getSymbolAtLocation(identifier)
+      }
+
+      if (ts.isObjectLiteralExpression(node) && previousSymbolDeclaration) {
+        if (ts.isVariableDeclaration(previousSymbolDeclaration)) {
+          const typeReference = TSH.cast(previousSymbolDeclaration.type, ts.isTypeReferenceNode)
+          return TSH.deref(ts, typeChecker, typeReference)
+        }
       }
 
       if (ts.isPropertyAssignment(node)) {
-        const propertyName = node.name.getText()
-        const memberSymbol = trackedSymbol?.members?.get(propertyName as ts.__String)
-        if (!memberSymbol) throw new Error(`Type ${trackedSymbol?.name} has no member ${propertyName}`)
-        return memberSymbol
+        TSH.assert(previousSymbolDeclaration, ts.isInterfaceDeclaration)
+        return trackedSymbol?.members?.get(node.name.getText() as ts.__String)
       }
 
       if (ts.isArrayLiteralExpression(node)) {
-        const propertySignature = TSH.cast(trackedSymbol?.valueDeclaration, ts.isPropertySignature)
+        const propertySignature = TSH.cast(previousSymbolDeclaration, ts.isPropertySignature)
         const arrayType = TSH.cast(propertySignature.type, ts.isArrayTypeNode)
         const elementType = TSH.cast(arrayType.elementType, ts.isTypeReferenceNode)
-        return TSH.deref(ts, typeChecker, elementType).symbol
+        const thingy = TSH.deref(ts, typeChecker, elementType)
+        console.log(thingy)
+        return thingy
       }
 
-      return trackedSymbol
+      // if (ts.isPropertyAssignment(node)) {
+      //   const propertyName = node.name.getText()
+      //   const memberSymbol = trackedSymbol?.members?.get(propertyName as ts.__String)
+      //   if (!memberSymbol) throw new Error(`Type ${trackedSymbol?.name} has no member ${propertyName}`)
+
+      //   const propertySignature = TSH.cast(memberSymbol.valueDeclaration, ts.isPropertySignature)
+      //   if (!propertySignature.type) throw new Error(`Property signature for ${propertyName} has no type`)
+
+      //   if (ts.isTypeReferenceNode(propertySignature.type)) {
+      //     return TSH.deref(ts, typeChecker, propertySignature.type).symbol
+      //   }
+
+      //   if (ts.isArrayTypeNode(propertySignature.type)) {
+      //     const typeReference = TSH.cast(propertySignature.type.elementType, ts.isTypeReferenceNode)
+      //     return TSH.deref(ts, typeChecker, typeReference).symbol
+      //   }
+
+      //   throw new Error('Unhandled property assignment case')
+      // }
+
+      // if (ts.isArrayLiteralExpression(node)) {
+      //   console.log(trackedSymbol?.name, trackedSymbol?.valueDeclaration.kind)
+      //   throw new Error('wtf loool')
+      //   // logger.logNode(trackedSymbol?.valueDeclaration!)
+
+      //   // const propertySignature = TSH.cast(trackedSymbol?.valueDeclaration, ts.isPropertySignature)
+      //   // const arrayType = TSH.cast(propertySignature.type, ts.isArrayTypeNode)
+      //   // const elementType = TSH.cast(arrayType.elementType, ts.isTypeReferenceNode)
+      //   // return TSH.deref(ts, typeChecker, elementType).symbol
+      // }
+      throw new Error(`Unhandled node kind ${ts.SyntaxKind[node.kind]}`)
     }, undefined)
   }
 

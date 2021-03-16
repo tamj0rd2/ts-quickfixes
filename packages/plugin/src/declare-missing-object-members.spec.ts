@@ -13,7 +13,7 @@ describe('declareMissingObjectMembers', () => {
   afterEach(() => FsMocker.reset())
 
   describe('within a variable declaration', () => {
-    it('can declare missing members for a variable declaration', () => {
+    it.only('can declare missing members for a variable declaration', () => {
       const initializer = `{ name: 'tam' }`
       const [filePath, fileContent] = FsMocker.addFile(`
         interface TargetType {
@@ -40,7 +40,7 @@ describe('declareMissingObjectMembers', () => {
       )
     })
 
-    it('can declare members nested inside a variable declaration', () => {
+    it.only('can declare members nested inside a variable declaration', () => {
       const initializer = '{}'
       const [filePath, fileContent] = FsMocker.addFile(`
         interface TargetType {
@@ -128,7 +128,7 @@ describe('declareMissingObjectMembers', () => {
     })
   })
 
-  it('can declare members in an array inside a variable declaration', () => {
+  it.only('can declare members in an array inside a variable declaration', () => {
     const initializer = '{}'
     const [filePath, fileContent] = FsMocker.addFile(`
       interface TargetType {
