@@ -2,7 +2,7 @@ import { TSH } from './helpers'
 import { Logger } from './providers/provider'
 
 export namespace DeclareMissingObjectMembers {
-  export const supportedErrorCodes: number[] = [2739, 2741]
+  export const supportedErrorCodes: number[] = [2739, 2740, 2741]
   export const supportsErrorCode = (code: number): boolean => supportedErrorCodes.includes(code)
 
   export interface Args extends TSH.NodePosition {
@@ -86,6 +86,8 @@ export namespace DeclareMissingObjectMembers {
     passedNodes: ts.Node[],
   ): ts.Symbol {
     const expectedSymbol = passedNodes.reduce<ts.Symbol | undefined>((trackedSymbol, node, index) => {
+      // logger.logNode(node, 'node')
+
       // treat the top level nodes first, since all the other nodes would depend on a previous symbol + declaration
       if (ts.isVariableDeclaration(node)) {
         const identifier = TSH.cast(node.name, ts.isIdentifier)
@@ -95,6 +97,7 @@ export namespace DeclareMissingObjectMembers {
       if (!trackedSymbol) throw new Error('No tracked symbol')
       const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
       if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
+      // logger.logNode(trackedDeclaration, 'trackedDeclaration')
 
       if (ts.isObjectLiteralExpression(node)) {
         if (
@@ -106,7 +109,12 @@ export namespace DeclareMissingObjectMembers {
       }
 
       if (ts.isPropertyAssignment(node)) {
-        return trackedSymbol?.members?.get(node.name.getText() as ts.__String)
+        const memberName = node.name.getText() as ts.__String
+        const member = trackedSymbol?.members?.get(memberName)
+        if (member) return member
+
+        const inheritedMembers = TSH.getInheritedMemberSymbols(ts, typeChecker, trackedSymbol)
+        return inheritedMembers.find((m) => m.name === memberName)
       }
 
       if (ts.isArrayLiteralExpression(node)) {

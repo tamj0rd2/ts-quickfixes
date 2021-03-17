@@ -78,13 +78,14 @@ export function getNodeRange(
   fileContent: string,
   search: string,
   { useFullStart = false, index = 0 }: Partial<{ useFullStart: boolean; index: number }> = {},
-): { start: number; end: number } {
+): { start: number; end: number; text: string } {
   const indexInsideFileContent = fileContent.split(search, index + 1).join(search).length
   if (indexInsideFileContent < 0) throw new Error(`Could not find ${search} in the file content`)
 
   const start = indexInsideFileContent + (useFullStart ? -1 : 0)
   if (start < 0) throw new Error(`Could not find ${search} in the file content`)
-  return { start, end: start + search.length }
+  const end = start + search.length
+  return { start, end, text: fileContent.substring(start, end) }
 }
 
 export function createTestProgram(fileNames: string[], allowedErrorCodes: number[] = []): ts.Program {

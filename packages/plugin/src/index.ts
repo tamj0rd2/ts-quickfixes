@@ -4,22 +4,34 @@ import { Logger } from './providers/provider'
 function init(modules: Modules): { create: CreateFn } {
   function create(info: ts.server.PluginCreateInfo): ts.LanguageService {
     const originalLanguageService = info.languageService
+    const ts = modules.typescript
+    const log = (prefix: string, message: string | Record<string, unknown>): void =>
+      info.project.projectService.logger.info(
+        `ts-quickfixes-plugin: ${prefix}: ${
+          typeof message === 'object'
+            ? JSON.stringify(message, (_, value) => (value === undefined ? null : value))
+            : message
+        }`,
+      )
     const logger: Logger = {
-      info: (message: string | Record<string, unknown>): void =>
-        info.project.projectService.logger.info(
-          `ts-quickfixes-plugin: INFO: ${
-            typeof message === 'object'
-              ? JSON.stringify(message, (_, value) => (value === undefined ? null : value))
-              : message
-          }`,
-        ),
+      info: (message) => log('INFO', message),
       error: (message: string | Error): void =>
-        info.project.projectService.logger.info(
-          `ts-quickfixes-plugin: ERROR: ${
-            message instanceof Error ? message.stack?.replace('\n', '. ') : message
-          }`,
+        log(
+          'ERROR',
+          message instanceof Error ? (message.stack ?? message.message).replace('\n', '. ') : message,
         ),
-      logNode: (): void => undefined,
+      logNode: (node, note = '') => {
+        const prefix = `${note} - ${ts.SyntaxKind[node.kind]}`
+        const lines = node.getText().split('\n')
+        if (lines.length === 1) {
+          log('NODE_LIN', `${prefix} - ${lines[0]}`)
+          return
+        }
+
+        log('NODE_BEG\t', prefix)
+        lines.forEach((line) => log('NODE\t', line))
+        log('NODE_END\t', '')
+      },
     }
     logger.info('Hello world!')
 
@@ -39,7 +51,7 @@ function init(modules: Modules): { create: CreateFn } {
     return {
       ...originalLanguageService,
       getCodeFixesAtPosition: logOnError(
-        new CodeFixProvider(originalLanguageService, logger, modules.typescript).getCodeFixesAtPosition,
+        new CodeFixProvider(originalLanguageService, logger, ts).getCodeFixesAtPosition,
       ),
     }
   }

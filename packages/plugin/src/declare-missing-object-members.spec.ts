@@ -13,10 +13,9 @@ import {
 describe('declareMissingObjectMembers', () => {
   afterEach(() => FsMocker.reset())
 
-  describe('within a variable declaration', () => {
-    it('can declare missing members for a variable declaration', () => {
-      const initializer = `{ name: 'tam' }`
-      const [filePath, fileContent] = FsMocker.addFile(`
+  it('works for a variable declaration', () => {
+    const initializer = `{ name: 'tam' }`
+    const [filePath, fileContent] = FsMocker.addFile(`
         interface TargetType {
           greeting: string
           name: string
@@ -26,97 +25,24 @@ describe('declareMissingObjectMembers', () => {
         export const target: TargetType = ${initializer}
       `)
 
-      const newText = getNewText({
-        filePath,
-        initializerPos: getNodeRange(fileContent, initializer),
-        errorPos: getNodeRange(fileContent, 'target'),
-      })
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer),
+      errorPos: getNodeRange(fileContent, 'target'),
+    })
 
-      expect(newText).toBe(
-        stripLeadingWhitespace(`{
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
             name: 'tam',
             greeting: 'todo',
             age: 0
         }`),
-      )
-    })
+    )
+  })
 
-    // the getInheritedMemberSymbols helper should probably be tested instead of this.
-    it('can declare missing members for a variable declaration that extends a type from another file', () => {
-      const initializer = `{ name: 'tam' }`
-      const [importedFilePath] = FsMocker.addFile(`
-        export interface GrandParentType {
-          age: number
-        }
-
-        export interface ParentType extends GrandParentType {
-          name: string
-        }
-      `)
-
-      const [targetFilePath, fileContent] = FsMocker.addFile(`
-        ${createImportStatement('ParentType', importedFilePath)}
-
-        interface SiblingType {
-          isAlive: boolean
-        }
-
-        interface TargetType extends ParentType, SiblingType {
-          greeting: string
-        }
-        
-        export const target: TargetType = ${initializer}
-      `)
-
-      const newText = getNewText({
-        filePath: targetFilePath,
-        initializerPos: getNodeRange(fileContent, initializer),
-        errorPos: getNodeRange(fileContent, 'target'),
-        additionalFiles: [importedFilePath],
-      })
-
-      expect(newText).toBe(
-        stripLeadingWhitespace(`{
-            name: 'tam',
-            greeting: 'todo',
-            age: 0,
-            isAlive: false
-        }`),
-      )
-    })
-
-    it('can declare members nested inside a variable declaration', () => {
-      const initializer = '{}'
-      const [filePath, fileContent] = FsMocker.addFile(`
-        interface TargetType {
-          greeting: string
-          name: string
-        }
-  
-        interface ParentType {
-          target: TargetType
-        }
-        
-        export const parent: ParentType = { target: ${initializer} }
-      `)
-
-      const newText = getNewText({
-        filePath,
-        initializerPos: getNodeRange(fileContent, initializer),
-        errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
-      })
-
-      expect(newText).toBe(
-        stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-      )
-    })
-
-    it('can declare members at nesting level 2 inside a variable declaration', () => {
-      const initializer = '{}'
-      const [filePath, fileContent] = FsMocker.addFile(`
+  it('works for a nested object inside a variable declaration', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
         interface TargetType {
           greeting: string
           name: string
@@ -129,23 +55,23 @@ describe('declareMissingObjectMembers', () => {
         export const grandParent: GrandParentType = { parent: { target: ${initializer} } }
       `)
 
-      const newText = getNewText({
-        filePath,
-        initializerPos: getNodeRange(fileContent, initializer),
-        errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
-      })
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer),
+      errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
+    })
 
-      expect(newText).toBe(
-        stripLeadingWhitespace(`{
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
             greeting: 'todo',
             name: 'todo'
         }`),
-      )
-    })
+    )
+  })
 
-    it('can declare members at nesting level 3 inside a variable declaration', () => {
-      const initializer = '{}'
-      const [filePath, fileContent] = FsMocker.addFile(`
+  it('works for a deeply nested object inside a variable declaration', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
         interface TargetType {
           greeting: string
           name: string
@@ -158,22 +84,95 @@ describe('declareMissingObjectMembers', () => {
         export const greatGrandParent: GreatGrandParentType = { grandParent: { parent: { target: ${initializer} } } }
       `)
 
-      const newText = getNewText({
-        filePath,
-        initializerPos: getNodeRange(fileContent, initializer),
-        errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
-      })
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer),
+      errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
+    })
 
-      expect(newText).toBe(
-        stripLeadingWhitespace(`{
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
             greeting: 'todo',
             name: 'todo'
         }`),
-      )
-    })
+    )
   })
 
-  it('can declare members in an array inside a variable declaration', () => {
+  it('works for missing inherited members', () => {
+    const initializer = `{ name: 'tam' }`
+    const [importedFilePath] = FsMocker.addFile(`
+      export interface GrandParentType {
+        age: number
+      }
+
+      export interface ParentType extends GrandParentType {
+        name: string
+      }
+    `)
+
+    const [targetFilePath, fileContent] = FsMocker.addFile(`
+      ${createImportStatement('ParentType', importedFilePath)}
+
+      interface SiblingType {
+        isAlive: boolean
+      }
+
+      interface TargetType extends ParentType, SiblingType {
+        greeting: string
+      }
+      
+      export const target: TargetType = ${initializer}
+    `)
+
+    const newText = getNewText({
+      filePath: targetFilePath,
+      initializerPos: getNodeRange(fileContent, initializer),
+      errorPos: getNodeRange(fileContent, 'target'),
+      additionalFiles: [importedFilePath],
+    })
+
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
+          name: 'tam',
+          greeting: 'todo',
+          age: 0,
+          isAlive: false
+      }`),
+    )
+  })
+
+  it(`works for a nested object that's missing inherited members`, () => {
+    const initializer = '{}'
+    const [otherFilePath] = FsMocker.addFile(`
+      export interface Person {
+        address: { city: string; postcode: string }
+      }
+    `)
+    const [filePath, fileContent] = FsMocker.addFile(`
+      ${createImportStatement('Person', otherFilePath)}
+
+      interface Employee extends Person {
+        jobTitle: string
+      }
+      
+      export const employee: Employee = { jobTitle: 'thingy', address: ${initializer} }
+    `)
+
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer),
+      errorPos: getNodeRange(fileContent, 'address'),
+    })
+
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
+            city: 'todo',
+            postcode: 'todo'
+        }`),
+    )
+  })
+
+  it('works for an object inside an array', () => {
     const initializer = '{}'
     const [filePath, fileContent] = FsMocker.addFile(`
       interface TargetType {
@@ -195,9 +194,9 @@ describe('declareMissingObjectMembers', () => {
 
     expect(newText).toBe(
       stripLeadingWhitespace(`{
-          greeting: 'todo',
-          name: 'todo'
-      }`),
+            greeting: 'todo',
+            name: 'todo'
+        }`),
     )
   })
 })

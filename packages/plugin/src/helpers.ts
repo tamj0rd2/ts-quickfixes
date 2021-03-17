@@ -77,6 +77,29 @@ export namespace TSH {
     cast(node, assertion)
   }
 
+  export function getInheritedMemberSymbols(
+    ts: TSH.ts,
+    typeChecker: ts.TypeChecker,
+    symbol: ts.Symbol,
+  ): ts.Symbol[] {
+    const symbolDeclarationNode = symbol.valueDeclaration ?? symbol.declarations[0]
+    const members: ts.Symbol[] = []
+
+    if (ts.isInterfaceDeclaration(symbolDeclarationNode)) {
+      const inheritedMemberSymbols = symbolDeclarationNode.heritageClauses
+        ?.flatMap((clause) => clause.types.map((type) => type.expression))
+        .filter(ts.isIdentifier)
+        .map((s) => typeChecker.getTypeAtLocation(s).symbol)
+        ?.filter((s): s is ts.Symbol => !!s)
+        .flatMap((inheritedSymbol) => getInheritedMemberSymbols(ts, typeChecker, inheritedSymbol))
+
+      members.push(...(inheritedMemberSymbols ?? []))
+    }
+
+    symbol.members?.forEach((s) => members.push(s))
+    return members
+  }
+
   export namespace Generate {
     export function objectLiteral(
       ts: ts,
@@ -116,29 +139,6 @@ export namespace TSH {
           { substituteNode: (_, node) => (node === initializer ? replacedInitializer : node) },
         )
         .printNode(ts.EmitHint.Unspecified, initializer, sourceFile)
-    }
-
-    function getInheritedMemberSymbols(
-      ts: TSH.ts,
-      typeChecker: ts.TypeChecker,
-      symbol: ts.Symbol,
-    ): ts.Symbol[] {
-      const symbolDeclarationNode = symbol.valueDeclaration ?? symbol.declarations[0]
-      const members: ts.Symbol[] = []
-
-      if (ts.isInterfaceDeclaration(symbolDeclarationNode)) {
-        const inheritedMemberSymbols = symbolDeclarationNode.heritageClauses
-          ?.flatMap((clause) => clause.types.map((type) => type.expression))
-          .filter(ts.isIdentifier)
-          .map((s) => typeChecker.getTypeAtLocation(s).symbol)
-          ?.filter((s): s is ts.Symbol => !!s)
-          .flatMap((inheritedSymbol) => getInheritedMemberSymbols(ts, typeChecker, inheritedSymbol))
-
-        members.push(...(inheritedMemberSymbols ?? []))
-      }
-
-      symbol.members?.forEach((s) => members.push(s))
-      return members
     }
 
     function expressionFromSymbol(
