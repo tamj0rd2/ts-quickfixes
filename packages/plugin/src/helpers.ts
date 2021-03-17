@@ -110,6 +110,26 @@ export namespace TSH {
     return members
   }
 
+  export function getSymbolForCallArgument(
+    ts: ts,
+    typeChecker: ts.TypeChecker,
+    callExpression: ts.CallExpression,
+    argumentNode: ts.Node,
+  ): ts.Symbol {
+    const { symbol: identifierSymbol } = typeChecker.getTypeAtLocation(callExpression.expression)
+    const functionDeclaration = identifierSymbol.valueDeclaration ?? identifierSymbol.declarations[0]
+
+    if (ts.isFunctionDeclaration(functionDeclaration) || ts.isArrowFunction(functionDeclaration)) {
+      const argumentIndex = callExpression.arguments.findIndex((arg) => arg === argumentNode)
+      if (argumentIndex < 0) throw new Error('Invalid argument index')
+
+      const expectedType = TSH.cast(functionDeclaration.parameters[argumentIndex]?.type, ts.isTypeNode)
+      return deref(ts, typeChecker, expectedType)
+    }
+
+    throw new Error(`Can't get symbol for given call expression index`)
+  }
+
   export namespace Generate {
     export function objectLiteral(
       ts: ts,

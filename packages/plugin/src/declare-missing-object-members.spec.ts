@@ -200,7 +200,7 @@ describe('declareMissingObjectMembers', () => {
     )
   })
 
-  it.skip('works for function arguments', () => {
+  it('works for function arguments', () => {
     const initializer = '{}'
     const [filePath, fileContent] = FsMocker.addFile(`
       interface TargetType {

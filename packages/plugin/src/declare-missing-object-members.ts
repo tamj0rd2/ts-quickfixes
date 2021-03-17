@@ -79,7 +79,10 @@ export namespace DeclareMissingObjectMembers {
       }
 
       if (ts.isCallExpression(node)) {
-        throw new Error(':O')
+        return {
+          relevantNodes,
+          topLevelSymbol: TSH.getSymbolForCallArgument(ts, typeChecker, node, previousNode),
+        }
       }
 
       relevantNodes.unshift(node)
@@ -89,7 +92,7 @@ export namespace DeclareMissingObjectMembers {
   }
 
   function deriveExpectedSymbolFromPassedNodes(
-    { ts, typeChecker, logger }: Args,
+    { ts, typeChecker }: Args,
     topLevelSymbol: ts.Symbol,
     relevantNodes: ts.Node[],
   ): ts.Symbol {
@@ -97,8 +100,8 @@ export namespace DeclareMissingObjectMembers {
       const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
       if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
 
-      logger.logNode(node, 'node')
-      logger.logNode(trackedDeclaration, 'trackedDeclaration')
+      // logger.logNode(node, 'node')
+      // logger.logNode(trackedDeclaration, 'trackedDeclaration')
 
       if (ts.isObjectLiteralExpression(node)) {
         if (
