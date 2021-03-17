@@ -1,0 +1,5 @@
+export const newBalance = withdrawMoney({
+    balance: 200,
+    accountNumber: 'todo',
+    sortCode: 'todo'
+}, 123)

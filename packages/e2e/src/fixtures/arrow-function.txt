@@ -1,0 +1,5 @@
+sendMoney({
+    balance: 400,
+    accountNumber: 'todo',
+    sortCode: 'todo'
+}, 200)

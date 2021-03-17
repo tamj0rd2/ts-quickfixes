@@ -34,19 +34,17 @@ describe('Acceptance tests', () => {
   describe('Declare missing argument members', () => {
     it('declares missing members for function arguments', async () => {
       const { getCodeActions } = createTestDeps()
-      const fileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
+      const fileUri = vscode.Uri.file(TEST_ENV_DIR + `/testing.ts`)
       const document = await vscode.workspace.openTextDocument(fileUri)
       await vscode.window.showTextDocument(document)
 
       const argumentValue = '{ balance: 200 }'
       const codeActions = await getCodeActions(document, argumentValue)
-      expect(codeActions[0].title).toStrictEqual('Declare missing argument members')
+      expect(codeActions[0].title).toStrictEqual('Declare missing members')
       await vscode.workspace.applyEdit(codeActions[0].edit!)
 
       const documentText = getAllDocumentText(document)
-      expect(documentText).toContain(
-        `export const newBalance = withdrawMoney({ balance: 200, accountNumber: 'todo', sortCode: 'todo' }, 123)`,
-      )
+      expect(documentText).toContain(await readFixture('withdraw-money'))
     })
 
     it('declares missing members for const arrow function arguments', async () => {
@@ -57,13 +55,11 @@ describe('Acceptance tests', () => {
 
       const argumentValue = '{ balance: 400 }'
       const codeActions = await getCodeActions(document, argumentValue)
-      expect(codeActions[0].title).toStrictEqual('Declare missing argument members')
+      expect(codeActions[0].title).toStrictEqual('Declare missing members')
       await vscode.workspace.applyEdit(codeActions[0].edit!)
 
       const documentText = getAllDocumentText(document)
-      expect(documentText).toContain(
-        `sendMoney({ balance: 400, accountNumber: 'todo', sortCode: 'todo' }, 200)`,
-      )
+      expect(documentText).toContain(await readFixture('arrow-function'))
     })
   })
 
@@ -75,10 +71,8 @@ describe('Acceptance tests', () => {
       await vscode.window.showTextDocument(testingDocument)
 
       const codeActions = await getCodeActions(testingDocument, `compensation: {}`)
-      // the other code fix should not be offered...
-      // expect(codeActions).toHaveLength(1)
-      expect(codeActions[1].title).toStrictEqual('Declare missing object members')
-      await vscode.workspace.applyEdit(codeActions[1].edit!)
+      expect(codeActions[0].title).toStrictEqual('Declare missing members')
+      await vscode.workspace.applyEdit(codeActions[0].edit!)
 
       const documentText = getAllDocumentText(testingDocument)
       expect(documentText).toContain(await readFixture('compensation'))

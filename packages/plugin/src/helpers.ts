@@ -223,18 +223,21 @@ export namespace TSH {
           : ts.factory.createNull()
       }
 
-      const typeDeclaration = type.getSymbol()?.valueDeclaration ?? type.getSymbol()?.declarations[0]
-      if (
-        typeDeclaration &&
-        (ts.isTypeLiteralNode(typeDeclaration) || ts.isInterfaceDeclaration(typeDeclaration))
-      ) {
-        // const memberSymbols = getExpectedMemberSymbols(typeDeclaration)
-        // return ts.factory.createObjectLiteralExpression(memberSymbols.map(createMemberForSymbol), true)
-        return ts.factory.createObjectLiteralExpression()
-      }
+      if (type.symbol) {
+        const typeDeclaration = type.symbol.valueDeclaration ?? type.symbol.declarations[0]
+        if (ts.isTypeLiteralNode(typeDeclaration) || ts.isInterfaceDeclaration(typeDeclaration)) {
+          const properties: ts.PropertyAssignment[] = []
+          type.symbol.members?.forEach((member) => {
+            properties.push(
+              ts.factory.createPropertyAssignment(member.name, expressionFromSymbol(member, ts, typeChecker)),
+            )
+          })
+          return ts.factory.createObjectLiteralExpression(properties, true)
+        }
 
-      if (type.getSymbol()?.name === 'Date') {
-        return ts.factory.createNewExpression(ts.factory.createIdentifier('Date'), undefined, [])
+        if (type.symbol.name === 'Date') {
+          return ts.factory.createNewExpression(ts.factory.createIdentifier('Date'), undefined, [])
+        }
       }
 
       return ts.factory.createNull()
