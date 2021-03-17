@@ -159,7 +159,7 @@ export abstract class CodeFix implements ts.CodeFixAction {
       }
 
       if (type.flags & this.ts.TypeFlags.EnumLiteral && type.isUnionOrIntersection() && type.aliasSymbol) {
-        const firstEnumMember = type.aliasSymbol.exports?.keys().next().value.toString()
+        const firstEnumMember = (type.aliasSymbol.exports?.keys().next().value as ts.__String)?.toString()
 
         return firstEnumMember
           ? this.ts.factory.createPropertyAccessExpression(
