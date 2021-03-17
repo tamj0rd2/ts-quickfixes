@@ -66,7 +66,17 @@ export namespace TSH {
     return node
   }
 
-  export function deref(typeChecker: ts.TypeChecker, node: ts.TypeNode): ts.Symbol {
+  export function deref(
+    ts: TSH.ts,
+    typeChecker: ts.TypeChecker,
+    node: ts.TypeNode | ts.Identifier,
+  ): ts.Symbol {
+    if (ts.isIdentifier(node)) {
+      const symbol = typeChecker.getSymbolAtLocation(node)
+      if (symbol) return symbol
+      throw new Error('Could not get symbol for identifier')
+    }
+
     return typeChecker.getTypeFromTypeNode(node).symbol
   }
 

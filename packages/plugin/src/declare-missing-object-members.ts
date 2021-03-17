@@ -2,7 +2,7 @@ import { TSH } from './helpers'
 import { Logger } from './providers/provider'
 
 export namespace DeclareMissingObjectMembers {
-  export const supportedErrorCodes: number[] = [2739, 2740, 2741]
+  export const supportedErrorCodes: number[] = [2345, 2739, 2740, 2741]
   export const supportsErrorCode = (code: number): boolean => supportedErrorCodes.includes(code)
 
   export interface Args extends TSH.NodePosition {
@@ -20,8 +20,8 @@ export namespace DeclareMissingObjectMembers {
     const errorNode = TSH.findNodeAtPosition(sourceFile, args)
 
     const initializer = findInitializer(ts, errorNode)
-    const passedNodes = collectNodesUpToFirstRelatedTypeDeclaration(args, initializer)
-    const symbol = deriveExpectedSymbolFromPassedNodes(args, typeChecker, passedNodes)
+    const { relevantNodes, topLevelSymbol } = collectNodesUpToFirstRelatedTypeDeclaration(args, initializer)
+    const symbol = deriveExpectedSymbolFromPassedNodes(args, topLevelSymbol, relevantNodes)
 
     const newInitializer = TSH.Generate.objectLiteral(ts, typeChecker, sourceFile, initializer, symbol)
     return {
@@ -63,74 +63,74 @@ export namespace DeclareMissingObjectMembers {
   /** this function returns them in reverse order (the initializer is last) because attempting to reverse it later on
    * casuses memory leaks */
   function collectNodesUpToFirstRelatedTypeDeclaration(
-    { ts }: Args,
+    args: Args,
     initializer: ts.ObjectLiteralExpression,
-  ): ts.Node[] {
-    const collectedNodes: ts.Node[] = [initializer]
+  ): { topLevelSymbol: ts.Symbol; relevantNodes: ts.Node[] } {
+    const { ts, typeChecker } = args
+    const relevantNodes: ts.Node[] = [initializer]
 
-    while (collectedNodes[0].parent) {
-      const previousNode = collectedNodes[0]
+    while (relevantNodes[0].parent) {
+      const previousNode = relevantNodes[0]
       const node = previousNode.parent
-      collectedNodes.unshift(node)
 
-      // TODO: when I redo function arguments, there'd be some extra logic here to break out
-      if (ts.isVariableDeclaration(node)) break
+      if (ts.isVariableDeclaration(node)) {
+        const identifier = TSH.cast(node.name, ts.isIdentifier)
+        return { relevantNodes, topLevelSymbol: TSH.deref(ts, typeChecker, identifier) }
+      }
+
+      if (ts.isCallExpression(node)) {
+        throw new Error(':O')
+      }
+
+      relevantNodes.unshift(node)
     }
 
-    return collectedNodes
+    throw new Error('Could find first related type declaration')
   }
 
   function deriveExpectedSymbolFromPassedNodes(
-    { ts }: Args,
-    typeChecker: ts.TypeChecker,
-    passedNodes: ts.Node[],
+    { ts, typeChecker, logger }: Args,
+    topLevelSymbol: ts.Symbol,
+    relevantNodes: ts.Node[],
   ): ts.Symbol {
-    const expectedSymbol = passedNodes.reduce<ts.Symbol | undefined>((trackedSymbol, node, index) => {
-      // logger.logNode(node, 'node')
-
-      // treat the top level nodes first, since all the other nodes would depend on a previous symbol + declaration
-      if (ts.isVariableDeclaration(node)) {
-        const identifier = TSH.cast(node.name, ts.isIdentifier)
-        return typeChecker.getSymbolAtLocation(identifier)
-      }
-
-      if (!trackedSymbol) throw new Error('No tracked symbol')
+    return relevantNodes.reduce<ts.Symbol>((trackedSymbol, node, index): ts.Symbol => {
       const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
       if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
-      // logger.logNode(trackedDeclaration, 'trackedDeclaration')
+
+      logger.logNode(node, 'node')
+      logger.logNode(trackedDeclaration, 'trackedDeclaration')
 
       if (ts.isObjectLiteralExpression(node)) {
         if (
           (ts.isVariableDeclaration(trackedDeclaration) || ts.isPropertySignature(trackedDeclaration)) &&
           trackedDeclaration.type
         ) {
-          return TSH.deref(typeChecker, trackedDeclaration.type)
+          return TSH.deref(ts, typeChecker, trackedDeclaration.type)
         }
       }
 
       if (ts.isPropertyAssignment(node)) {
         const memberName = node.name.getText() as ts.__String
-        const member = trackedSymbol?.members?.get(memberName)
+        const member = trackedSymbol.members?.get(memberName)
         if (member) return member
 
         const inheritedMembers = TSH.getInheritedMemberSymbols(ts, typeChecker, trackedSymbol)
-        return inheritedMembers.find((m) => m.name === memberName)
+        const inheritedMember = inheritedMembers.find((m) => m.name === memberName)
+        if (!inheritedMember) throw new Error(`Could not find member ${memberName}`)
+        return inheritedMember
       }
 
       if (ts.isArrayLiteralExpression(node)) {
         const propertySignature = TSH.cast(trackedDeclaration, ts.isPropertySignature)
         const arrayType = TSH.cast(propertySignature.type, ts.isArrayTypeNode)
-        return TSH.deref(typeChecker, arrayType.elementType)
+        return TSH.deref(ts, typeChecker, arrayType.elementType)
       }
 
-      if (index === passedNodes.length - 1) {
+      if (index === relevantNodes.length - 1) {
         return trackedSymbol
       }
 
       throw new Error(`Unhandled node kind ${ts.SyntaxKind[node.kind]}`)
-    }, undefined)
-
-    if (!expectedSymbol) throw new Error('Could not figure out what the expected symbol is')
-    return expectedSymbol
+    }, topLevelSymbol)
   }
 }
