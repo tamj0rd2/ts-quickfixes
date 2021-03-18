@@ -79,9 +79,10 @@ export namespace DeclareMissingObjectMembers {
       }
 
       if (ts.isCallExpression(node)) {
+        const identifier = TSH.cast(node.expression, ts.isIdentifier)
         return {
           relevantNodes,
-          topLevelSymbol: TSH.getSymbolForCallArgument(ts, typeChecker, node, previousNode),
+          topLevelSymbol: TSH.deref(ts, typeChecker, identifier),
         }
       }
 
@@ -92,25 +93,18 @@ export namespace DeclareMissingObjectMembers {
   }
 
   function deriveExpectedSymbolFromPassedNodes(
-    { ts, typeChecker }: Args,
+    { ts, typeChecker, logger }: Args,
     topLevelSymbol: ts.Symbol,
     relevantNodes: ts.Node[],
   ): ts.Symbol {
     return relevantNodes.reduce<ts.Symbol>((trackedSymbol, node, index): ts.Symbol => {
       const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
       if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
+      const isFinalNode = index === relevantNodes.length - 1
 
-      // logger.logNode(node, 'node')
-      // logger.logNode(trackedDeclaration, 'trackedDeclaration')
-
-      if (ts.isObjectLiteralExpression(node)) {
-        if (
-          (ts.isVariableDeclaration(trackedDeclaration) || ts.isPropertySignature(trackedDeclaration)) &&
-          trackedDeclaration.type
-        ) {
-          return TSH.deref(ts, typeChecker, trackedDeclaration.type)
-        }
-      }
+      console.log({ isFinalNode, trackedSymbolName: trackedSymbol.name })
+      logger.logNode(node, `node-${index}`)
+      logger.logNode(trackedDeclaration, `trackedDeclaration-${index}`)
 
       if (ts.isPropertyAssignment(node)) {
         const memberName = node.name.getText() as ts.__String
@@ -129,11 +123,29 @@ export namespace DeclareMissingObjectMembers {
         return TSH.deref(ts, typeChecker, arrayType.elementType)
       }
 
-      if (index === relevantNodes.length - 1) {
-        return trackedSymbol
+      if (ts.isObjectLiteralExpression(node)) {
+        if (
+          (ts.isVariableDeclaration(trackedDeclaration) || ts.isPropertySignature(trackedDeclaration)) &&
+          trackedDeclaration.type
+        ) {
+          return TSH.deref(ts, typeChecker, trackedDeclaration.type)
+        }
+
+        if (ts.isFunctionDeclaration(trackedDeclaration)) {
+          const callExpression = TSH.cast(node.parent, ts.isCallExpression)
+          const argumentIndex = callExpression.arguments.findIndex((arg) => arg === node)
+          if (argumentIndex < 0) throw new Error('why oh why')
+
+          const parameter = trackedDeclaration.parameters[argumentIndex]
+          const blah = TSH.deref(ts, typeChecker, parameter.type)
+          console.log(blah)
+          return blah
+        }
+
+        if (isFinalNode) return trackedSymbol
       }
 
-      throw new Error(`Unhandled node kind ${ts.SyntaxKind[node.kind]}`)
+      throw new Error(`Unhandled path for node kind ${ts.SyntaxKind[node.kind]}`)
     }, topLevelSymbol)
   }
 }

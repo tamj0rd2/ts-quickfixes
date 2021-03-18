@@ -225,6 +225,36 @@ describe('declareMissingObjectMembers', () => {
         }`),
     )
   })
+
+  it('works for objects that are nested inside a function argument', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
+      interface TargetType {
+        greeting: string
+        name: string
+      }
+
+      interface ParentType {
+        target: TargetType[]
+      }
+
+      function doSomething(parent: ParentType) {}
+      
+      doSomething({ target: [${initializer}] })
+    `)
+
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
+    })
+
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
+            greeting: 'todo',
+            name: 'todo'
+        }`),
+    )
+  })
 })
 
 interface GetNewText {

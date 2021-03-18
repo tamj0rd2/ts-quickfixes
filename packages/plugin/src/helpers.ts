@@ -69,8 +69,10 @@ export namespace TSH {
   export function deref(
     ts: TSH.ts,
     typeChecker: ts.TypeChecker,
-    node: ts.TypeNode | ts.Identifier,
+    node: ts.TypeNode | ts.Identifier | undefined,
   ): ts.Symbol {
+    if (!node) throw new Error('Cannot deref undefined node')
+
     if (ts.isIdentifier(node)) {
       const symbol = typeChecker.getSymbolAtLocation(node)
       if (symbol) return symbol
