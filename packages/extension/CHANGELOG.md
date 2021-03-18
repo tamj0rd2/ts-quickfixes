@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.6.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.6.0...ts-quickfixes-extension-v1.6.1) (2021-03-18)
+
+
+### Reverts
+
+* Revert "ci: do basic extension release as part of CI" ([fda09ae](https://github.com/tamj0rd2/ts-quickfixes/commit/fda09aec07785e1632c9b73113054e9286e20859))
+
 # [ts-quickfixes-extension-v1.6.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.5.0...ts-quickfixes-extension-v1.6.0) (2021-03-18)
 
 
