@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.6.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.5.0...ts-quickfixes-plugin-v1.6.0) (2021-03-18)
+
+
+### Features
+
+* **plugin:** fix missing members in more situations ([08fab02](https://github.com/tamj0rd2/ts-quickfixes/commit/08fab020cd6f347893936df0bfbb460e40d8fea5)), closes [#76](https://github.com/tamj0rd2/ts-quickfixes/issues/76) [#121](https://github.com/tamj0rd2/ts-quickfixes/issues/121)
+
 # [ts-quickfixes-plugin-v1.5.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.4.1...ts-quickfixes-plugin-v1.5.0) (2021-02-18)
 
 
