@@ -1,3 +1,11 @@
+# [ts-quickfixes-extension-v1.6.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.5.0...ts-quickfixes-extension-v1.6.0) (2021-03-18)
+
+
+### Features
+
+* **deps:** update to latest plugin version 1.5.0 ([a3e14b3](https://github.com/tamj0rd2/ts-quickfixes/commit/a3e14b394b618659f3fb665fbeb368404c280855))
+* **deps:** update to latest plugin version 1.6.0 ([48a8d6e](https://github.com/tamj0rd2/ts-quickfixes/commit/48a8d6e669a099669c5bc2c032822bb601e70228))
+
 # [ts-quickfixes-extension-v1.6.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.5.0...ts-quickfixes-extension-v1.6.0) (2021-02-18)
 
 
