@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable */
 import { Person } from './another-file'
 
 interface Employee extends Person {
@@ -24,3 +24,24 @@ export const sendMoney = (account: Account, amount: number): void => {
 }
 
 sendMoney({ balance: 400 }, 200)
+
+interface Job {
+  name: string
+  compensation: {
+    salary: number
+    includesHealthcare: boolean
+  }
+  responsibilities: { description: string }[]
+}
+
+export const job: Job = {
+  name: 'todo',
+  compensation: {},
+  responsibilities: [{}],
+}
+
+class HttpClient {
+  constructor(args: { timeout: number; baseUrl: string }) {}
+}
+
+const client = new HttpClient({ timeout: 456 })

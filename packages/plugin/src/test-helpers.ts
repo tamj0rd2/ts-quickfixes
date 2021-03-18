@@ -1,7 +1,7 @@
 import { resolve } from 'path'
 import _mockFs from 'mock-fs'
 import ts from 'typescript/lib/tsserverlibrary'
-import { Logger } from './providers/provider'
+import { Logger } from './provider'
 
 export const REPO_ROOT = resolve(__dirname, '../../..')
 
@@ -77,11 +77,15 @@ export class FsMocker {
 export function getNodeRange(
   fileContent: string,
   search: string,
-  { useFullStart = false }: Partial<{ useFullStart: boolean }> = {},
-): { start: number; end: number } {
-  const start = fileContent.indexOf(search) + (useFullStart ? -1 : 0)
+  { useFullStart = false, index = 0 }: Partial<{ useFullStart: boolean; index: number }> = {},
+): { start: number; end: number; text: string } {
+  const indexInsideFileContent = fileContent.split(search, index + 1).join(search).length
+  if (indexInsideFileContent < 0) throw new Error(`Could not find ${search} in the file content`)
+
+  const start = indexInsideFileContent + (useFullStart ? -1 : 0)
   if (start < 0) throw new Error(`Could not find ${search} in the file content`)
-  return { start, end: start + search.length }
+  const end = start + search.length
+  return { start, end, text: fileContent.substring(start, end) }
 }
 
 export function createTestProgram(fileNames: string[], allowedErrorCodes: number[] = []): ts.Program {
@@ -102,7 +106,11 @@ export function createTestProgram(fileNames: string[], allowedErrorCodes: number
   if (disallowedErrors.length > 0) {
     debugger
     console.error(
-      disallowedErrors.map(({ file, messageText }) => ({ messageText, fileName: file?.fileName })),
+      disallowedErrors.map(({ file, messageText, code }) => ({
+        code,
+        messageText,
+        fileName: file?.fileName,
+      })),
     )
     throw new Error('Unexpected errors while creating the TS program')
   }
@@ -114,9 +122,24 @@ export function createImportStatement(importName: string, importFilePath: string
   return `import { ${importName} } from './${importFilePath.replace('.ts', '')}'`
 }
 
-export function createDummyLogger(): Logger {
-  return {
+export function createDummyLogger(enableLogging = false): Logger {
+  const dummyLogger = {
     error: jest.fn(),
     info: jest.fn(),
+    logNode: jest.fn(),
   }
+
+  if (enableLogging) {
+    dummyLogger.info.mockImplementation(console.log)
+    dummyLogger.error.mockImplementation(console.log)
+    dummyLogger.logNode.mockImplementation((node: ts.Node, prefix?: string) =>
+      console.dir({
+        kind: ts.SyntaxKind[node.kind],
+        prefix,
+        text: node.getText().substring(0, 100),
+      }),
+    )
+  }
+
+  return dummyLogger
 }

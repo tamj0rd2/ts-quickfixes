@@ -1,0 +1,8 @@
+export const job: Job = {
+  name: 'todo',
+  compensation: {
+    salary: 0,
+    includesHealthcare: false
+},
+  responsibilities: [{}],
+}
