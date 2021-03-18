@@ -101,9 +101,6 @@ export namespace DeclareMissingObjectMembers {
       const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
       if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
 
-      // logger.logNode(node)
-      // logger.logNode(trackedDeclaration, 'trackedDeclaration')
-
       if (ts.isPropertyAssignment(node)) {
         const memberName = node.name.getText() as ts.__String
         const member = trackedSymbol.members?.get(memberName)
@@ -115,37 +112,26 @@ export namespace DeclareMissingObjectMembers {
         return inheritedMember
       }
 
-      // seeing a lot of similarities acrros the code... do I really need to write these blocks based on the node,
-      // or can I write them based on the tracked declaration?
-      if (ts.isArrayLiteralExpression(node)) {
-        if (ts.isPropertySignature(trackedDeclaration)) {
-          return TSH.deref(ts, typeChecker, trackedDeclaration.type)
-        }
-
-        if (ts.isFunctionLike(trackedDeclaration)) {
-          return TSH.getTypeForFunctionArgument(ts, typeChecker, trackedDeclaration, node)
-        }
+      if (ts.isPropertySignature(trackedDeclaration)) {
+        return TSH.deref(ts, typeChecker, trackedDeclaration.type)
       }
 
-      if (ts.isObjectLiteralExpression(node)) {
-        if (
-          (ts.isVariableDeclaration(trackedDeclaration) || ts.isPropertySignature(trackedDeclaration)) &&
-          trackedDeclaration.type
-        ) {
+      if (ts.isFunctionLike(trackedDeclaration)) {
+        return TSH.getTypeForFunctionArgument(ts, typeChecker, trackedDeclaration, node)
+      }
+
+      if (ts.isVariableDeclaration(trackedDeclaration)) {
+        if (trackedDeclaration.type) {
           return TSH.deref(ts, typeChecker, trackedDeclaration.type)
         }
 
-        if (ts.isVariableDeclaration(trackedDeclaration) && trackedDeclaration.initializer) {
+        if (trackedDeclaration.initializer) {
           const initializer = TSH.cast(trackedDeclaration.initializer, ts.isFunctionLike)
           return TSH.getTypeForFunctionArgument(ts, typeChecker, initializer, node)
         }
-
-        if (ts.isFunctionLike(trackedDeclaration)) {
-          return TSH.getTypeForFunctionArgument(ts, typeChecker, trackedDeclaration, node)
-        }
-
-        if (index === relevantNodes.length - 1) return trackedSymbol
       }
+
+      if (ts.isObjectLiteralExpression(node) && index === relevantNodes.length - 1) return trackedSymbol
 
       throw new Error(`Unhandled path for node kind ${ts.SyntaxKind[node.kind]}`)
     }, topLevelSymbol)
