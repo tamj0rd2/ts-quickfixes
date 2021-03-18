@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "shipit": "echo 'not configured atm'"
+    "shipit": "semantic-release"
   },
   "keywords": [],
   "author": "tamj0rd2",
