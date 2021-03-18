@@ -226,6 +226,58 @@ describe('declareMissingObjectMembers', () => {
     )
   })
 
+  it('works for const arrow function arguments', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
+      interface TargetType {
+        greeting: string
+        name: string
+      }
+
+      const doSomething = (target: TargetType) => {}
+      
+      doSomething(${initializer})
+    `)
+
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
+    })
+
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
+            greeting: 'todo',
+            name: 'todo'
+        }`),
+    )
+  })
+
+  it('works for const function arguments', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(`
+      interface TargetType {
+        greeting: string
+        name: string
+      }
+
+      const doSomething = function (target: TargetType) {}
+      
+      doSomething(${initializer})
+    `)
+
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
+    })
+
+    expect(newText).toBe(
+      stripLeadingWhitespace(`{
+            greeting: 'todo',
+            name: 'todo'
+        }`),
+    )
+  })
+
   it('works for objects that are nested inside a function argument', () => {
     const initializer = '{}'
     const [filePath, fileContent] = FsMocker.addFile(`

@@ -21,7 +21,7 @@ export namespace DeclareMissingObjectMembers {
 
     const initializer = findInitializer(ts, errorNode)
     const { relevantNodes, topLevelSymbol } = collectNodesUpToFirstRelatedTypeDeclaration(args, initializer)
-    const symbol = deriveExpectedSymbolFromPassedNodes(args, topLevelSymbol, relevantNodes)
+    const symbol = deriveExpectedSymbolFromRelatedNodes(args, topLevelSymbol, relevantNodes)
 
     const newInitializer = TSH.Generate.objectLiteral(ts, typeChecker, sourceFile, initializer, symbol)
     return {
@@ -92,7 +92,7 @@ export namespace DeclareMissingObjectMembers {
     throw new Error('Could find first related type declaration')
   }
 
-  function deriveExpectedSymbolFromPassedNodes(
+  function deriveExpectedSymbolFromRelatedNodes(
     { ts, typeChecker }: Args,
     topLevelSymbol: ts.Symbol,
     relevantNodes: ts.Node[],
@@ -100,6 +100,9 @@ export namespace DeclareMissingObjectMembers {
     return relevantNodes.reduce<ts.Symbol>((trackedSymbol, node, index): ts.Symbol => {
       const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
       if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
+
+      // logger.logNode(node)
+      // logger.logNode(trackedDeclaration, 'trackedDeclaration')
 
       if (ts.isPropertyAssignment(node)) {
         const memberName = node.name.getText() as ts.__String
@@ -112,12 +115,14 @@ export namespace DeclareMissingObjectMembers {
         return inheritedMember
       }
 
+      // seeing a lot of similarities acrros the code... do I really need to write these blocks based on the node,
+      // or can I write them based on the tracked declaration?
       if (ts.isArrayLiteralExpression(node)) {
         if (ts.isPropertySignature(trackedDeclaration)) {
           return TSH.deref(ts, typeChecker, trackedDeclaration.type)
         }
 
-        if (ts.isFunctionDeclaration(trackedDeclaration)) {
+        if (ts.isFunctionLike(trackedDeclaration)) {
           return TSH.getTypeForFunctionArgument(ts, typeChecker, trackedDeclaration, node)
         }
       }
@@ -130,7 +135,12 @@ export namespace DeclareMissingObjectMembers {
           return TSH.deref(ts, typeChecker, trackedDeclaration.type)
         }
 
-        if (ts.isFunctionDeclaration(trackedDeclaration)) {
+        if (ts.isVariableDeclaration(trackedDeclaration) && trackedDeclaration.initializer) {
+          const initializer = TSH.cast(trackedDeclaration.initializer, ts.isFunctionLike)
+          return TSH.getTypeForFunctionArgument(ts, typeChecker, initializer, node)
+        }
+
+        if (ts.isFunctionLike(trackedDeclaration)) {
           return TSH.getTypeForFunctionArgument(ts, typeChecker, trackedDeclaration, node)
         }
 

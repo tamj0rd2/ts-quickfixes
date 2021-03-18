@@ -66,6 +66,15 @@ export namespace TSH {
     return node
   }
 
+  export function castToOneOf<T extends ts.Node>(
+    node: ts.Node | undefined,
+    ...assertions: ({ name: string } & ((node: ts.Node) => node is T))[]
+  ): T {
+    if (!node) throw new Error(`Cannot cast because the node is undefined`)
+    if (assertions.some((assertion) => assertion(node))) return node as T
+    throw new Error(`All casts failed`)
+  }
+
   export function deref(
     ts: TSH.ts,
     typeChecker: ts.TypeChecker,
@@ -139,7 +148,7 @@ export namespace TSH {
   export function getTypeForFunctionArgument(
     ts: ts,
     typeChecker: ts.TypeChecker,
-    functionDeclaration: ts.FunctionDeclaration,
+    functionDeclaration: ts.SignatureDeclaration,
     argument: ts.Node,
   ): ts.Symbol {
     const callExpression = TSH.cast(argument.parent, ts.isCallExpression)
