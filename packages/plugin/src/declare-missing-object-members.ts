@@ -93,18 +93,13 @@ export namespace DeclareMissingObjectMembers {
   }
 
   function deriveExpectedSymbolFromPassedNodes(
-    { ts, typeChecker, logger }: Args,
+    { ts, typeChecker }: Args,
     topLevelSymbol: ts.Symbol,
     relevantNodes: ts.Node[],
   ): ts.Symbol {
     return relevantNodes.reduce<ts.Symbol>((trackedSymbol, node, index): ts.Symbol => {
       const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
       if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
-      const isFinalNode = index === relevantNodes.length - 1
-
-      console.log({ isFinalNode, trackedSymbolName: trackedSymbol.name })
-      logger.logNode(node, `node-${index}`)
-      logger.logNode(trackedDeclaration, `trackedDeclaration-${index}`)
 
       if (ts.isPropertyAssignment(node)) {
         const memberName = node.name.getText() as ts.__String
@@ -118,9 +113,13 @@ export namespace DeclareMissingObjectMembers {
       }
 
       if (ts.isArrayLiteralExpression(node)) {
-        const propertySignature = TSH.cast(trackedDeclaration, ts.isPropertySignature)
-        const arrayType = TSH.cast(propertySignature.type, ts.isArrayTypeNode)
-        return TSH.deref(ts, typeChecker, arrayType.elementType)
+        if (ts.isPropertySignature(trackedDeclaration)) {
+          return TSH.deref(ts, typeChecker, trackedDeclaration.type)
+        }
+
+        if (ts.isFunctionDeclaration(trackedDeclaration)) {
+          return TSH.getTypeForFunctionArgument(ts, typeChecker, trackedDeclaration, node)
+        }
       }
 
       if (ts.isObjectLiteralExpression(node)) {
@@ -132,17 +131,10 @@ export namespace DeclareMissingObjectMembers {
         }
 
         if (ts.isFunctionDeclaration(trackedDeclaration)) {
-          const callExpression = TSH.cast(node.parent, ts.isCallExpression)
-          const argumentIndex = callExpression.arguments.findIndex((arg) => arg === node)
-          if (argumentIndex < 0) throw new Error('why oh why')
-
-          const parameter = trackedDeclaration.parameters[argumentIndex]
-          const blah = TSH.deref(ts, typeChecker, parameter.type)
-          console.log(blah)
-          return blah
+          return TSH.getTypeForFunctionArgument(ts, typeChecker, trackedDeclaration, node)
         }
 
-        if (isFinalNode) return trackedSymbol
+        if (index === relevantNodes.length - 1) return trackedSymbol
       }
 
       throw new Error(`Unhandled path for node kind ${ts.SyntaxKind[node.kind]}`)

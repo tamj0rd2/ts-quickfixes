@@ -79,6 +79,10 @@ export namespace TSH {
       throw new Error('Could not get symbol for identifier')
     }
 
+    if (ts.isArrayTypeNode(node)) {
+      return TSH.deref(ts, typeChecker, node.elementType)
+    }
+
     return typeChecker.getTypeFromTypeNode(node).symbol
   }
 
@@ -130,6 +134,20 @@ export namespace TSH {
     }
 
     throw new Error(`Can't get symbol for given call expression index`)
+  }
+
+  export function getTypeForFunctionArgument(
+    ts: ts,
+    typeChecker: ts.TypeChecker,
+    functionDeclaration: ts.FunctionDeclaration,
+    argument: ts.Node,
+  ): ts.Symbol {
+    const callExpression = TSH.cast(argument.parent, ts.isCallExpression)
+    const argumentIndex = callExpression.arguments.findIndex((arg) => arg === argument)
+    if (argumentIndex < 0) throw new Error('why oh why')
+
+    const parameter = functionDeclaration.parameters[argumentIndex]
+    return TSH.deref(ts, typeChecker, parameter.type)
   }
 
   export namespace Generate {
