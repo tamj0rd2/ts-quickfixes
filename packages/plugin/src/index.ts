@@ -1,5 +1,5 @@
-import { CodeFixProvider } from './providers'
-import { Logger } from './providers/provider'
+import { CodeFixProvider } from './code-fixes'
+import { Logger } from './provider'
 
 function init(modules: Modules): { create: CreateFn } {
   function create(info: ts.server.PluginCreateInfo): ts.LanguageService {

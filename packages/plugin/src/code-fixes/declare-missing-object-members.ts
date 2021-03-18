@@ -1,5 +1,5 @@
-import { TSH } from './helpers'
-import { Logger } from './providers/provider'
+import { TSH } from '../helpers'
+import { Logger } from '../provider'
 
 export namespace DeclareMissingObjectMembers {
   export const supportedErrorCodes: number[] = [2345, 2739, 2740, 2741]

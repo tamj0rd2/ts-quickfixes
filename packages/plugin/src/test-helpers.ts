@@ -1,7 +1,7 @@
 import { resolve } from 'path'
 import _mockFs from 'mock-fs'
 import ts from 'typescript/lib/tsserverlibrary'
-import { Logger } from './providers/provider'
+import { Logger } from './provider'
 
 export const REPO_ROOT = resolve(__dirname, '../../..')
 

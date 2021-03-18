@@ -1,6 +1,6 @@
 import ts from 'typescript/lib/tsserverlibrary'
 import { DeclareMissingObjectMembers } from './declare-missing-object-members'
-import { TSH } from './helpers'
+import { TSH } from '../helpers'
 import {
   createDummyLogger,
   createImportStatement,
@@ -8,7 +8,7 @@ import {
   FsMocker,
   getNodeRange,
   stripLeadingWhitespace,
-} from './test-helpers'
+} from '../test-helpers'
 
 describe('declareMissingObjectMembers', () => {
   afterEach(() => FsMocker.reset())

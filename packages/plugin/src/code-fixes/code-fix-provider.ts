@@ -1,5 +1,5 @@
-import { DeclareMissingObjectMembers } from '../declare-missing-object-members'
-import { BaseProvider } from './provider'
+import { DeclareMissingObjectMembers } from './declare-missing-object-members'
+import { BaseProvider } from '../provider'
 
 export class CodeFixProvider extends BaseProvider {
   public getCodeFixesAtPosition = (
