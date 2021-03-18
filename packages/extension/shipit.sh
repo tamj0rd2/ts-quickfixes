@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
+if [[ -z "${GITHUB_TOKEN}" ]]; then
+  echo "You need to set the GITHUB_TOKEN environment variable"
+  exit 1
+fi
+
 export HUSKY=0
 
 CURRENT_PLUGIN_VERSION="$(jq '.dependencies["ts-quickfixes-plugin"].version' ./package-lock.json -r)"
