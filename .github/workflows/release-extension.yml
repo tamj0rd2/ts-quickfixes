@@ -24,6 +24,7 @@ jobs:
         run: npx lerna exec --stream --scope ts-quickfixes-extension -- ./shipit.sh
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
 
       # - name: Get current version number
       #   run: echo "::set-output name=version::$(jq '.dependencies["ts-quickfixes-plugin"].version' ./package-lock.json -r)"

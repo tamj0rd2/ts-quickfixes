@@ -6,6 +6,11 @@ if [[ -z "${GITHUB_TOKEN}" ]]; then
   exit 1
 fi
 
+if [[ -z "${VSCE_TOKEN}" ]]; then
+  echo "You need to set the VSCE_TOKEN environment variable"
+  exit 1
+fi
+
 export HUSKY=0
 
 CURRENT_PLUGIN_VERSION="$(jq '.dependencies["ts-quickfixes-plugin"].version' ./package-lock.json -r)"
@@ -29,4 +34,4 @@ git commit -m "feat(deps): update to latest plugin version $UPDATED_PLUGIN_VERSI
 semantic-release --no-ci
 
 npx lerna run --scope ts-quickfixes-extension --stream vsce:package
-npx lerna run --scope ts-quickfixes-extension --stream vsce:publish
+npx lerna run --scope ts-quickfixes-extension --stream vsce:publish -- -- -p $VSCE_TOKEN
