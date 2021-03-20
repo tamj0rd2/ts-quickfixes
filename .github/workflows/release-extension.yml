@@ -1,0 +1,46 @@
+name: Release extension
+on:
+  workflow_dispatch:
+jobs:
+  publish:
+    name: Release and publish
+    if: ${{ github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Read .nvmrc
+        run: echo ::set-output name=NVMRC::$(cat .nvmrc)
+        id: nvm
+      - name: Setup Node.jobs
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ steps.nvm.outputs.NVMRC }}
+      - name: Install dependencies
+        run: npm run setup
+      - name: Build
+        run: npm run build
+      - name: Publish
+        run: npx lerna exec --stream --scope ts-quickfixes-extension -- ./shipit.sh
+
+      # - name: Get current version number
+      #   run: echo "::set-output name=version::$(jq '.dependencies["ts-quickfixes-plugin"].version' ./package-lock.json -r)"
+      #   id: current_version_check
+      #   working-directory: ./packages/extension
+      # - name: Install latest plugin version
+      #   run: npm i ts-quickfixes-plugin@latest --save
+      #   working-directory: ./packages/extension
+      # - name: Get updated version number
+      #   run: echo "::set-output name=version::$(jq '.dependencies["ts-quickfixes-plugin"].version' ./package-lock.json -r)"
+      #   id: updated_version_check
+      #   working-directory: ./packages/extension
+      # - name: Create pull request
+      #   if: ${{ steps.current_version_check.outputs.version != steps.updated_version_check.outputs.version }}
+      #   uses: peter-evans/create-pull-request@v3
+      #   with:
+      #     token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+      #     commit-message: 'feat(deps): use latest plugin version (${{ steps.updated_version_check.outputs.version }})'
+      #     title: Use latest plugin version ${{ steps.updated_version_check.outputs.version }}
+      #     base: master
+      #     branch: bump-plugin-version
+      #     labels: merge
