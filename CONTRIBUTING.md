@@ -46,15 +46,11 @@ If you're able to see `Hello world!` in the output, the monitoring is working
 ## Releasing
 
 The release of the plugin happens automatically via the CI pipeline. The extension
-should be updated/released manually for now.
+should be updated/release manually by triggering the desired github action. NOTE: these
+actions should only ever be run if the main CI pipeline is green.
 
-1. Run `npm run setup` to trigger any new dependencies to be installed
-2. Run `npm i --prefix ./packages/extension/ ts-quickfixes-plugin` (If the plugin
-  has had a recent release, the package-lock.json for the extension should have
-  pending changes in git. If not, something went wrong,)
-3. Commit the `package-lock.json` as a feat (so that a new extension version can be released)
-4. Push the changes
-5. Run `./publish.sh` to publish a new version of the extension
+- Bump version, package and publish - Install latest plugin and release github action
+- Just package and release - Marketplace Release action
 
 ## Troubleshooting
 
