@@ -14,9 +14,11 @@ describe('Acceptance tests', () => {
   })
 
   describe('Declare missing members', () => {
+    const TS_FOLDER = TEST_ENV_DIR + '/declare-missing-members'
+
     it('declares missing members for interfaces that have been extended', async () => {
       const { getCodeActions } = createTestDeps()
-      const testFileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
+      const testFileUri = vscode.Uri.file(TS_FOLDER + '/variable-members.ts')
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 
@@ -31,7 +33,7 @@ describe('Acceptance tests', () => {
 
     it('declares missing members for function arguments', async () => {
       const { getCodeActions } = createTestDeps()
-      const fileUri = vscode.Uri.file(TEST_ENV_DIR + `/testing.ts`)
+      const fileUri = vscode.Uri.file(TS_FOLDER + `/argument-members.ts`)
       const document = await vscode.workspace.openTextDocument(fileUri)
       await vscode.window.showTextDocument(document)
 
@@ -46,7 +48,7 @@ describe('Acceptance tests', () => {
 
     it('declares missing members for const arrow function arguments', async () => {
       const { getCodeActions } = createTestDeps()
-      const fileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
+      const fileUri = vscode.Uri.file(TS_FOLDER + '/argument-members.ts')
       const document = await vscode.workspace.openTextDocument(fileUri)
       await vscode.window.showTextDocument(document)
 
@@ -61,7 +63,7 @@ describe('Acceptance tests', () => {
 
     it('declares missing members for nested objects', async () => {
       const { getCodeActions } = createTestDeps()
-      const testFileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
+      const testFileUri = vscode.Uri.file(TS_FOLDER + '/nesting.ts')
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 
@@ -73,9 +75,9 @@ describe('Acceptance tests', () => {
       expect(documentText).toContain(await readFixture('compensation'))
     })
 
-    it('declares missing members for constructor arguments', async () => {
+    it('declares missing members for constructor arguments using locals if available', async () => {
       const { getCodeActions } = createTestDeps()
-      const testFileUri = vscode.Uri.file(TEST_ENV_DIR + '/testing.ts')
+      const testFileUri = vscode.Uri.file(TS_FOLDER + '/constructor-argument-members.ts')
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 

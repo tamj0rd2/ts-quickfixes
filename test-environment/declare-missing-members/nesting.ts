@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Person } from './another-file'
+import { Person } from '../another-file'
 
 interface Employee extends Person {
   department: string
@@ -41,7 +41,8 @@ export const job: Job = {
 }
 
 class HttpClient {
-  constructor(args: { timeout: number; baseUrl: string }) {}
+  constructor(args: { timeout: number; baseUrl: string, operation: string }) {}
 }
 
+const baseUrl = 'https://www.example.com'
 const client = new HttpClient({ timeout: 456 })

@@ -108,7 +108,7 @@ export namespace TSH {
     symbol: ts.Symbol,
   ): ts.Symbol[] {
     const symbolDeclarationNode = symbol.valueDeclaration ?? symbol.declarations[0]
-    const members: ts.Symbol[] = []
+    const members = getMembers(ts, typeChecker, symbol)
 
     if (ts.isInterfaceDeclaration(symbolDeclarationNode)) {
       const inheritedMemberSymbols = symbolDeclarationNode.heritageClauses
@@ -118,11 +118,69 @@ export namespace TSH {
         ?.filter((s): s is ts.Symbol => !!s)
         .flatMap((inheritedSymbol) => getInheritedMemberSymbols(ts, typeChecker, inheritedSymbol))
 
-      members.push(...(inheritedMemberSymbols ?? []))
+      inheritedMemberSymbols?.forEach((s) => !members.has(s.name) && members.set(s.name, s))
+    }
+    return Array.from(members.values())
+  }
+
+  function getMembers(ts: ts, typeChecker: ts.TypeChecker, symbol: ts.Symbol): Map<string, ts.Symbol> {
+    const collectedMembers = new Map<string, ts.Symbol>()
+    if (symbol.members) {
+      symbol.members.forEach((m) => collectedMembers.set(m.name, m))
+      return collectedMembers
     }
 
-    symbol.members?.forEach((s) => members.push(s))
-    return members
+    if (
+      ts.isPropertySignature(symbol.valueDeclaration) &&
+      symbol.valueDeclaration.type &&
+      (ts.isTypeLiteralNode(symbol.valueDeclaration.type) ||
+        ts.isTypeReferenceNode(symbol.valueDeclaration.type))
+    ) {
+      const referencedSymbol = deref(ts, typeChecker, symbol.valueDeclaration.type)
+      return getMembers(ts, typeChecker, referencedSymbol)
+    }
+
+    return collectedMembers
+  }
+
+  // make this throw useful errors instead of returning a bool
+  export function assertSymbolsAreCompatible(
+    ts: ts,
+    typeChecker: ts.TypeChecker,
+    expectedSymbol: ts.Symbol,
+    symbolToCompare: ts.Symbol,
+  ): void {
+    const topLevelExpectedMembers = getMembers(ts, typeChecker, expectedSymbol)
+    const topLevelCompareMembers = getMembers(ts, typeChecker, symbolToCompare)
+
+    for (const expectedMember of topLevelExpectedMembers.values()) {
+      const memberToCompare = topLevelCompareMembers.get(expectedMember.name)
+      if (!memberToCompare) {
+        if (expectedMember.flags & ts.SymbolFlags.Optional) continue
+        throw new Error(`Required member "${expectedMember.name}" missing`)
+      }
+
+      const memberType = typeChecker.getTypeAtLocation(expectedMember.valueDeclaration)
+      const compareType = typeChecker.getTypeAtLocation(memberToCompare.valueDeclaration)
+      if (compareType.flags !== memberType.flags)
+        throw new Error(`Symbol flags for "${expectedMember.name}" do not match`)
+
+      assertSymbolsAreCompatible(ts, typeChecker, expectedMember, memberToCompare)
+    }
+  }
+
+  export function areSymbolsCompatible(
+    ts: ts,
+    typeChecker: ts.TypeChecker,
+    expectedSymbol: ts.Symbol,
+    symbolToCompare: ts.Symbol,
+  ): boolean {
+    try {
+      assertSymbolsAreCompatible(ts, typeChecker, expectedSymbol, symbolToCompare)
+      return true
+    } catch (err) {
+      return false
+    }
   }
 
   export function getSymbolForCallArgument(
@@ -164,6 +222,30 @@ export namespace TSH {
   }
 
   export namespace Generate {
+    export function isMatchingIdentifierInScope(
+      ts: ts,
+      typeChecker: ts.TypeChecker,
+      member: ts.Symbol,
+      symbolsInScope: ts.Symbol[],
+    ): boolean {
+      const symbolInScope = symbolsInScope.find((s) => s.name === member.name)
+      if (!symbolInScope) return false
+      if (areSymbolsCompatible(ts, typeChecker, member, symbolInScope)) return true
+
+      // you could also get it from the type of the variable, if there is one. or figure it out... so many ways to do this
+      if (
+        ts.isVariableDeclaration(symbolInScope.valueDeclaration) &&
+        symbolInScope.valueDeclaration.initializer
+      ) {
+        const initializerSymbol = typeChecker
+          .getTypeAtLocation(symbolInScope.valueDeclaration.initializer)
+          .getSymbol()
+        return !!initializerSymbol && areSymbolsCompatible(ts, typeChecker, member, initializerSymbol)
+      }
+
+      return false
+    }
+
     export function objectLiteral(
       ts: ts,
       typeChecker: ts.TypeChecker,
@@ -173,26 +255,32 @@ export namespace TSH {
     ): string {
       if (!expectedSymbol.members) throw new Error('Symbol has no members property')
       const { symbol: initializerSymbol } = typeChecker.getTypeAtLocation(initializer)
+      const symbolsInScope = typeChecker
+        .getSymbolsInScope(initializer, ts.SymbolFlags.ModuleMember)
+        .filter((s) => s.valueDeclaration?.getSourceFile() === sourceFile)
+      // .filter((x) => x.flags & ts.SymbolFlags.FunctionScopedVariable)
 
-      const newProperties = new Map<ts.__String, ts.PropertyAssignment>()
-      function addNewPropertyAssignment(memberSymbol: ts.Symbol): void {
-        const memberName = memberSymbol.name as ts.__String
-        if (initializerSymbol.members?.has(memberName) || newProperties.has(memberName)) return
-        newProperties.set(
+      const additionalProperties = new Map<ts.__String, ts.PropertyAssignment>()
+      function addNewPropertyAssignment(member: ts.Symbol): void {
+        const memberName = member.name as ts.__String
+        if (initializerSymbol.members?.has(memberName) || additionalProperties.has(memberName)) return
+
+        additionalProperties.set(
           memberName,
           ts.factory.createPropertyAssignment(
-            memberSymbol.name,
-            expressionFromSymbol(memberSymbol, ts, typeChecker),
+            member.name,
+            isMatchingIdentifierInScope(ts, typeChecker, member, symbolsInScope)
+              ? ts.factory.createIdentifier(member.name)
+              : expressionFromSymbol(member, ts, typeChecker),
           ),
         )
       }
 
       expectedSymbol.members.forEach(addNewPropertyAssignment)
-      const extras = getInheritedMemberSymbols(ts, typeChecker, expectedSymbol)
-      extras.forEach(addNewPropertyAssignment)
+      getInheritedMemberSymbols(ts, typeChecker, expectedSymbol).forEach(addNewPropertyAssignment)
 
       const replacedInitializer = ts.factory.createObjectLiteralExpression(
-        [...initializer.properties, ...newProperties.values()],
+        [...initializer.properties, ...additionalProperties.values()],
         true,
       )
 

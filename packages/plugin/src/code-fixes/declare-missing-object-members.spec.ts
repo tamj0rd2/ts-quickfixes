@@ -361,6 +361,67 @@ describe('declareMissingObjectMembers', () => {
         }`),
     )
   })
+
+  describe('scope', () => {
+    it('can use locals that are in scope', () => {
+      const initializer = '{}'
+      const [filePath, fileContent] = FsMocker.addFile(`
+        interface TargetType {
+          greeting: string
+          name: string
+        }
+        
+        interface ParentType {
+          target: TargetType
+        }
+        
+        const target = { greeting: 'hello', name: 'John Doe' }
+        
+        const something: ParentType = ${initializer}
+      `)
+
+      const newText = getNewText({
+        filePath,
+        initializerPos: getNodeRange(fileContent, initializer),
+        errorPos: getNodeRange(fileContent, 'something'),
+      })
+
+      expect(newText).toBe(`{\n    target: target\n}`)
+    })
+
+    it('does not use a local in scope if the type is not sufficient', () => {
+      const initializer = '{}'
+      const [filePath, fileContent] = FsMocker.addFile(`
+        interface TargetType {
+          greeting: string
+          name: string
+        }
+        
+        interface ParentType {
+          target: TargetType
+        }
+        
+        const target = { woah: 'This is so wrong' }
+        
+        const something: ParentType = ${initializer}
+      `)
+
+      const newText = getNewText({
+        filePath,
+        initializerPos: getNodeRange(fileContent, initializer),
+        errorPos: getNodeRange(fileContent, 'something'),
+      })
+
+      expect(newText).toBe(
+        stripLeadingWhitespace(`{
+            target: {
+                greeting: 'todo',
+                name: 'todo'
+            }
+        }`),
+      )
+    })
+  })
 })
 
 interface GetNewText {

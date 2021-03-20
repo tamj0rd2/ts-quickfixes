@@ -1,4 +1,5 @@
 const client = new HttpClient({
     timeout: 456,
-    baseUrl: 'todo'
+    baseUrl: baseUrl,
+    operation: 'todo'
 })

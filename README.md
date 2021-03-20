@@ -2,13 +2,22 @@
 
 ## Features
 
-### Declare missing object members
+### Declare missing members
 
-![Declare missing object members](gifs/implement-missing-members.gif)
+This fix declares members that are missing from a certain object. It works in the following scenarios including in
+situations where a nested object has missing members:
 
-### Declare missing (object) argument members
+#### Missing variable members
 
-![Declare missing (object) argument members](gifs/declare-missing-argument-members.gif)
+![Missing variable members](gifs/missing-variable-members.gif)
+
+#### Missing argument members
+
+![Missing argument members](gifs/missing-argument-members.gif)
+
+#### Missing constructor argument members
+
+![Missing constructor members](gifs/missing-constructor-argument-members.gif)
 
 ## Requirements
 
@@ -31,8 +40,7 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-I've only covered a few use cases/scenarios. If your use case is not covered,
-please open a github issue.
+If you expect a fix to be available but it isn't, please [open a github issue](https://github.com/tamj0rd2/ts-quickfixes/issues/new) with a small example explaining the issue
 
 ### Formatting
 
@@ -46,4 +54,4 @@ See [CHANGELOG.md](https://github.com/tamj0rd2/ts-quickfixes/blob/master/package
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/tamj0rd2/ts-quickfixes/blob/master/packages/plugin/CONTRIBUTING.md)
+See [CONTRIBUTING.md](https://github.com/tamj0rd2/ts-quickfixes/blob/master/CONTRIBUTING.md)
