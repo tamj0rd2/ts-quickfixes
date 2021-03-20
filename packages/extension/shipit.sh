@@ -19,6 +19,9 @@ then
 fi
 
 echo "Going to release extension using updated plugin version $UPDATED_PLUGIN_VERSION"
+git config user.email "tam@example.com"
+git config user.name "CI"
+
 git add package.json package-lock.json
 git commit -m "feat(deps): update to latest plugin version $UPDATED_PLUGIN_VERSION"
 
