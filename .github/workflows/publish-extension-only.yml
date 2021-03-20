@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NVMRC }}
       - name: Install dependencies
-        run: npm run setup
+        run: npm run setup && npm i --prefix ./packages/extension
       - name: Build
         run: npm run build
       - name: Package
