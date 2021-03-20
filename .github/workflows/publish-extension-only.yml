@@ -1,9 +1,9 @@
-name: Install latest plugin and release extension
+name: Marketplace release
 on:
   workflow_dispatch:
 jobs:
   publish:
-    name: Install latest plugin and release
+    name: Publish to marketplace
     if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     steps:
@@ -20,8 +20,9 @@ jobs:
         run: npm run setup
       - name: Build
         run: npm run build
+      - name: Package
+        run: npx lerna run --scope ts-quickfixes-extension --stream vsce:package
       - name: Publish
-        run: npx lerna exec --stream --scope ts-quickfixes-extension -- ./shipit.sh
+        run: npx lerna run --scope ts-quickfixes-extension --stream vsce:publish -- -- -p $VSCE_TOKEN
         env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
