@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.7.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.6.1...ts-quickfixes-extension-v1.7.0) (2021-03-20)
+
+
+### Features
+
+* use local variables to fill in missing members, instead of default values ([33e0fc7](https://github.com/tamj0rd2/ts-quickfixes/commit/33e0fc755d86d508e1bf4ac5891ea458a4c58579)), closes [#124](https://github.com/tamj0rd2/ts-quickfixes/issues/124)
+
 # [ts-quickfixes-extension-v1.6.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.6.0...ts-quickfixes-extension-v1.6.1) (2021-03-18)
 
 
