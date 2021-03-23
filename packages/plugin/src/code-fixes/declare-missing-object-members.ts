@@ -20,8 +20,8 @@ export namespace DeclareMissingObjectMembers {
     const errorNode = TSH.findNodeAtPosition(sourceFile, args)
 
     const initializer = findInitializer(ts, errorNode)
-    const { relevantNodes, topLevelSymbol } = collectNodesUpToFirstRelatedTypeDeclaration(args, initializer)
-    const symbol = deriveExpectedSymbolFromRelatedNodes(args, topLevelSymbol, relevantNodes)
+    const { relevantNodes, topLevelType } = collectNodesUpToFirstRelatedTypeDeclaration(args, initializer)
+    const symbol = deriveExpectedSymbolFromRelatedNodes(args, topLevelType, relevantNodes)
 
     const newInitializer = TSH.Generate.objectLiteral(ts, typeChecker, sourceFile, initializer, symbol)
     return {
@@ -65,7 +65,7 @@ export namespace DeclareMissingObjectMembers {
   function collectNodesUpToFirstRelatedTypeDeclaration(
     args: Args,
     initializer: ts.ObjectLiteralExpression,
-  ): { topLevelSymbol: ts.Symbol; relevantNodes: ts.Node[] } {
+  ): { topLevelType: ts.Type; relevantNodes: ts.Node[] } {
     const { ts, typeChecker } = args
     const relevantNodes: ts.Node[] = [initializer]
 
@@ -75,14 +75,14 @@ export namespace DeclareMissingObjectMembers {
 
       if (ts.isVariableDeclaration(node)) {
         const identifier = TSH.cast(node.name, ts.isIdentifier)
-        return { relevantNodes, topLevelSymbol: TSH.deref(ts, typeChecker, identifier) }
+        return { relevantNodes, topLevelType: TSH.deref(ts, typeChecker, identifier) }
       }
 
       if (ts.isCallExpression(node) || ts.isNewExpression(node)) {
         const identifier = TSH.cast(node.expression, ts.isIdentifier)
         return {
           relevantNodes,
-          topLevelSymbol: TSH.deref(ts, typeChecker, identifier),
+          topLevelType: TSH.deref(ts, typeChecker, identifier),
         }
       }
 
@@ -95,13 +95,14 @@ export namespace DeclareMissingObjectMembers {
   function deriveExpectedSymbolFromRelatedNodes(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     { ts, typeChecker, logger }: Args,
-    topLevelSymbol: ts.Symbol,
+    topLevelType: ts.Type,
     relevantNodes: ts.Node[],
   ): ts.Symbol {
-    return relevantNodes.reduce<ts.Symbol>((trackedSymbol, node, index): ts.Symbol => {
+    const finalSymbol = relevantNodes.reduce<ts.Symbol>((trackedSymbol, node, index): ts.Symbol => {
       const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
       if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
 
+      // logger.info(`current symbol: ${trackedSymbol.name}`)
       // logger.logNode(node)
       // logger.logNode(trackedDeclaration, 'trackedDeclaration')
 
@@ -117,22 +118,11 @@ export namespace DeclareMissingObjectMembers {
       }
 
       if (ts.isPropertySignature(trackedDeclaration)) {
-        return TSH.deref(ts, typeChecker, trackedDeclaration.type)
+        return TSH.deref(ts, typeChecker, trackedDeclaration.type).symbol
       }
 
       if (ts.isFunctionLike(trackedDeclaration)) {
         return TSH.getTypeForCallArgument(ts, typeChecker, trackedDeclaration, node)
-      }
-
-      if (ts.isVariableDeclaration(trackedDeclaration)) {
-        if (trackedDeclaration.type) {
-          return TSH.deref(ts, typeChecker, trackedDeclaration.type)
-        }
-
-        if (trackedDeclaration.initializer) {
-          const initializer = TSH.cast(trackedDeclaration.initializer, ts.isFunctionLike)
-          return TSH.getTypeForCallArgument(ts, typeChecker, initializer, node)
-        }
       }
 
       if (ts.isClassDeclaration(trackedDeclaration)) {
@@ -141,11 +131,21 @@ export namespace DeclareMissingObjectMembers {
         return TSH.getTypeForCallArgument(ts, typeChecker, constructor, node)
       }
 
-      if (ts.isObjectLiteralExpression(node) && index === relevantNodes.length - 1) {
-        return trackedSymbol
+      if (ts.isObjectLiteralExpression(node)) {
+        // we're still at the top of the tree, so just use the current symbol as a base
+        if (index === 0 && ts.isInterfaceDeclaration(trackedDeclaration)) return trackedSymbol
+
+        // we're at the end of the tree, so return what we've got
+        if (index === relevantNodes.length - 1) return trackedSymbol
       }
 
-      throw new Error(`Unhandled path for node kind ${ts.SyntaxKind[node.kind]}`)
-    }, topLevelSymbol)
+      throw new Error(
+        `Unhandled path. Node kind ${ts.SyntaxKind[node.kind]}, tracked node kind ${
+          ts.SyntaxKind[trackedDeclaration.kind]
+        }`,
+      )
+    }, topLevelType.symbol)
+
+    return finalSymbol
   }
 }

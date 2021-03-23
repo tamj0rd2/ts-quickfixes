@@ -127,6 +127,7 @@ export function createDummyLogger(enableLogging = false): Logger {
     error: jest.fn(),
     info: jest.fn(),
     logNode: jest.fn(),
+    logType: jest.fn(),
   }
 
   if (enableLogging) {
@@ -138,6 +139,11 @@ export function createDummyLogger(enableLogging = false): Logger {
         prefix,
         text: node.getText().substring(0, 100),
       }),
+    )
+    dummyLogger.logType.mockImplementation(
+      ({ checker, ...type }: ts.Type & { checker: unknown }, prefix?: string) => {
+        console.dir({ prefix, ...type })
+      },
     )
   }
 

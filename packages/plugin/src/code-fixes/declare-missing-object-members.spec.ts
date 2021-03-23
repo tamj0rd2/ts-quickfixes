@@ -429,6 +429,7 @@ interface GetNewText {
   initializerPos: TSH.NodePosition
   filePath: string
   additionalFiles?: string[]
+  enableLogging?: boolean
 }
 
 function getNewText(args: GetNewText): string {
@@ -442,7 +443,7 @@ function getNewText(args: GetNewText): string {
     filePath,
     program: program,
     typeChecker: program.getTypeChecker(),
-    logger: createDummyLogger(true),
+    logger: createDummyLogger(args.enableLogging || false),
     ...(errorPos ?? initializerPos),
   })
   return fix.changes[0].textChanges[0].newText

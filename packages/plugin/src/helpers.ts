@@ -79,12 +79,12 @@ export namespace TSH {
     ts: TSH.ts,
     typeChecker: ts.TypeChecker,
     node: ts.TypeNode | ts.Identifier | undefined,
-  ): ts.Symbol {
+  ): ts.Type {
     if (!node) throw new Error('Cannot deref undefined node')
 
     if (ts.isIdentifier(node)) {
-      const symbol = typeChecker.getSymbolAtLocation(node)
-      if (symbol) return symbol
+      const type = typeChecker.getTypeAtLocation(node)
+      if (type) return type
       throw new Error('Could not get symbol for identifier')
     }
 
@@ -92,7 +92,7 @@ export namespace TSH {
       return TSH.deref(ts, typeChecker, node.elementType)
     }
 
-    return typeChecker.getTypeFromTypeNode(node).symbol
+    return typeChecker.getTypeFromTypeNode(node)
   }
 
   export function assert<T extends ts.Node>(
@@ -137,7 +137,7 @@ export namespace TSH {
         ts.isTypeReferenceNode(symbol.valueDeclaration.type))
     ) {
       const referencedSymbol = deref(ts, typeChecker, symbol.valueDeclaration.type)
-      return getMembers(ts, typeChecker, referencedSymbol)
+      return getMembers(ts, typeChecker, referencedSymbol.symbol)
     }
 
     return collectedMembers
@@ -197,7 +197,7 @@ export namespace TSH {
       if (argumentIndex < 0) throw new Error('Invalid argument index')
 
       const expectedType = TSH.cast(functionDeclaration.parameters[argumentIndex]?.type, ts.isTypeNode)
-      return deref(ts, typeChecker, expectedType)
+      return deref(ts, typeChecker, expectedType).symbol
     }
 
     throw new Error(`Can't get symbol for given call expression index`)
@@ -218,7 +218,7 @@ export namespace TSH {
     if (argumentIndex < 0) throw new Error('why oh why')
 
     const parameter = signatureDeclaration.parameters[argumentIndex]
-    return TSH.deref(ts, typeChecker, parameter.type)
+    return TSH.deref(ts, typeChecker, parameter.type).symbol
   }
 
   export namespace Generate {

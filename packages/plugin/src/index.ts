@@ -5,21 +5,19 @@ function init(modules: Modules): { create: CreateFn } {
   function create(info: ts.server.PluginCreateInfo): ts.LanguageService {
     const originalLanguageService = info.languageService
     const ts = modules.typescript
-    const log = (prefix: string, message: string | Record<string, unknown>): void =>
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    const log = (prefix: string, message: string | object): void =>
       info.project.projectService.logger.info(
         `ts-quickfixes-plugin: ${prefix}: ${
           typeof message === 'object'
-            ? JSON.stringify(message, (_, value) => (value === undefined ? null : value))
+            ? JSON.stringify(message, (_, value) => (value === undefined ? null : value)).replace('\n', '  ')
             : message
         }`,
       )
     const logger: Logger = {
       info: (message) => log('INFO', message),
       error: (message: string | Error): void =>
-        log(
-          'ERROR',
-          message instanceof Error ? (message.stack ?? message.message).replace('\n', '. ') : message,
-        ),
+        log('ERROR', message instanceof Error ? message.stack ?? message.message : message),
       logNode: (node, note = '') => {
         const prefix = `${note} - ${ts.SyntaxKind[node.kind]}`
         const lines = node.getText().split('\n')
@@ -32,6 +30,7 @@ function init(modules: Modules): { create: CreateFn } {
         lines.forEach((line) => log('NODE\t', line))
         log('NODE_END\t', '')
       },
+      logType: ({ checker, ...type }, note = '') => log(`TYPE: ${note}`, type),
     }
     logger.info('Hello world!')
 
