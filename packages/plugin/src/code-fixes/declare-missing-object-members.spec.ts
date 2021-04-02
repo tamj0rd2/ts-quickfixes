@@ -7,7 +7,6 @@ import {
   createTestProgram,
   FsMocker,
   getNodeRange,
-  stripLeadingWhitespace,
 } from '../test-helpers'
 
 describe('declareMissingObjectMembers', () => {
@@ -31,13 +30,7 @@ describe('declareMissingObjectMembers', () => {
       errorPos: getNodeRange(fileContent, 'target'),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            name: 'tam',
-            greeting: 'todo',
-            age: 0
-        }`),
-    )
+    expect(newText).toMatchInitializer({ name: 'tam', greeting: 'todo', age: 0 })
   })
 
   it('works for a nested object inside a variable declaration', () => {
@@ -61,12 +54,7 @@ describe('declareMissingObjectMembers', () => {
       errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
   it('works for a deeply nested object inside a variable declaration', () => {
@@ -90,12 +78,7 @@ describe('declareMissingObjectMembers', () => {
       errorPos: getNodeRange(fileContent, 'target', { index: 1 }),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
   it('works for missing inherited members', () => {
@@ -131,14 +114,12 @@ describe('declareMissingObjectMembers', () => {
       additionalFiles: [importedFilePath],
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-          name: 'tam',
-          greeting: 'todo',
-          age: 0,
-          isAlive: false
-      }`),
-    )
+    expect(newText).toMatchInitializer({
+      name: 'tam',
+      greeting: 'todo',
+      age: 0,
+      isAlive: false,
+    })
   })
 
   it(`works for a nested object that's missing inherited members`, () => {
@@ -164,12 +145,7 @@ describe('declareMissingObjectMembers', () => {
       errorPos: getNodeRange(fileContent, 'address'),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            city: 'todo',
-            postcode: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ city: 'todo', postcode: 'todo' })
   })
 
   it('works for an object inside an array', () => {
@@ -192,12 +168,7 @@ describe('declareMissingObjectMembers', () => {
       initializerPos: getNodeRange(fileContent, initializer),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
   it('works for function arguments', () => {
@@ -218,12 +189,7 @@ describe('declareMissingObjectMembers', () => {
       initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
   it('works for const arrow function arguments', () => {
@@ -244,12 +210,7 @@ describe('declareMissingObjectMembers', () => {
       initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
   it('works for const function arguments', () => {
@@ -270,12 +231,7 @@ describe('declareMissingObjectMembers', () => {
       initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
   it('works for objects that are nested inside a function argument', () => {
@@ -300,12 +256,7 @@ describe('declareMissingObjectMembers', () => {
       initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
   it('works for objects inside an array inside a function argument', () => {
@@ -326,12 +277,7 @@ describe('declareMissingObjectMembers', () => {
       initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
   it('works for class constructors', () => {
@@ -354,12 +300,7 @@ describe('declareMissingObjectMembers', () => {
       initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
     })
 
-    expect(newText).toBe(
-      stripLeadingWhitespace(`{
-            greeting: 'todo',
-            name: 'todo'
-        }`),
-    )
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
   describe('scope', () => {
@@ -386,7 +327,7 @@ describe('declareMissingObjectMembers', () => {
         errorPos: getNodeRange(fileContent, 'something'),
       })
 
-      expect(newText).toBe(`{\n    target: target\n}`)
+      expect(newText).toMatchInitializer({ target: 'target' }, { doNotFormatStrings: true })
     })
 
     it('does not use a local in scope if the type is not sufficient', () => {
@@ -412,14 +353,7 @@ describe('declareMissingObjectMembers', () => {
         errorPos: getNodeRange(fileContent, 'something'),
       })
 
-      expect(newText).toBe(
-        stripLeadingWhitespace(`{
-            target: {
-                greeting: 'todo',
-                name: 'todo'
-            }
-        }`),
-      )
+      expect(newText).toMatchInitializer({ target: { greeting: 'todo', name: 'todo' } })
     })
   })
 })

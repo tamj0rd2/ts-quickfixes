@@ -4,4 +4,5 @@ module.exports = {
   testTimeout: 10000,
   testMatch: ['<rootDir>/src/**/*.spec.ts'],
   watchPathIgnorePatterns: ['out', 'node_modules'],
+  setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
 }
