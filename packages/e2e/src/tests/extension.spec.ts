@@ -15,75 +15,71 @@ describe('Acceptance tests', () => {
 
   describe('Declare missing members', () => {
     const TS_FOLDER = TEST_ENV_DIR + '/declare-missing-members'
+    const ACTION_NAME = 'Declare missing members'
 
     it('declares missing members for interfaces that have been extended', async () => {
-      const { getCodeActions } = createTestDeps()
+      const { getCodeAction } = createTestDeps()
       const testFileUri = vscode.Uri.file(TS_FOLDER + '/variable-members.ts')
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 
       const variableName = 'employee'
-      const codeActions = await getCodeActions(testingDocument, `const ${variableName}`)
-      expect(codeActions[0].title).toStrictEqual('Declare missing members')
-      await vscode.workspace.applyEdit(codeActions[0].edit!)
+      const codeAction = await getCodeAction(testingDocument, `const ${variableName}`, ACTION_NAME)
+      await vscode.workspace.applyEdit(codeAction.edit!)
 
       const variableValue = getVariableValue(getAllDocumentText(testingDocument), variableName)
       expect(variableValue).toStrictEqual(await readFixture(variableName))
     })
 
     it('declares missing members for function arguments', async () => {
-      const { getCodeActions } = createTestDeps()
+      const { getCodeAction } = createTestDeps()
       const fileUri = vscode.Uri.file(TS_FOLDER + `/argument-members.ts`)
       const document = await vscode.workspace.openTextDocument(fileUri)
       await vscode.window.showTextDocument(document)
 
       const argumentValue = '{ balance: 200 }'
-      const codeActions = await getCodeActions(document, argumentValue)
-      expect(codeActions[0].title).toStrictEqual('Declare missing members')
-      await vscode.workspace.applyEdit(codeActions[0].edit!)
+      const codeAction = await getCodeAction(document, argumentValue, ACTION_NAME)
+      await vscode.workspace.applyEdit(codeAction.edit!)
 
       const documentText = getAllDocumentText(document)
       expect(documentText).toContain(await readFixture('withdraw-money'))
     })
 
     it('declares missing members for const arrow function arguments', async () => {
-      const { getCodeActions } = createTestDeps()
+      const { getCodeAction } = createTestDeps()
       const fileUri = vscode.Uri.file(TS_FOLDER + '/argument-members.ts')
       const document = await vscode.workspace.openTextDocument(fileUri)
       await vscode.window.showTextDocument(document)
 
       const argumentValue = '{ balance: 400 }'
-      const codeActions = await getCodeActions(document, argumentValue)
-      expect(codeActions[0].title).toStrictEqual('Declare missing members')
-      await vscode.workspace.applyEdit(codeActions[0].edit!)
+      const codeAction = await getCodeAction(document, argumentValue, ACTION_NAME)
+      await vscode.workspace.applyEdit(codeAction.edit!)
 
       const documentText = getAllDocumentText(document)
       expect(documentText).toContain(await readFixture('arrow-function'))
     })
 
     it('declares missing members for nested objects', async () => {
-      const { getCodeActions } = createTestDeps()
+      const { getCodeAction } = createTestDeps()
       const testFileUri = vscode.Uri.file(TS_FOLDER + '/nesting.ts')
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 
-      const codeActions = await getCodeActions(testingDocument, `compensation: {}`)
-      expect(codeActions[0].title).toStrictEqual('Declare missing members')
-      await vscode.workspace.applyEdit(codeActions[0].edit!)
+      const codeAction = await getCodeAction(testingDocument, `compensation: {}`, ACTION_NAME)
+      await vscode.workspace.applyEdit(codeAction.edit!)
 
       const documentText = getAllDocumentText(testingDocument)
       expect(documentText).toContain(await readFixture('compensation'))
     })
 
     it('declares missing members for constructor arguments using locals if available', async () => {
-      const { getCodeActions } = createTestDeps()
+      const { getCodeAction } = createTestDeps()
       const testFileUri = vscode.Uri.file(TS_FOLDER + '/constructor-argument-members.ts')
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 
-      const codeActions = await getCodeActions(testingDocument, `{ timeout: 456 }`)
-      expect(codeActions[0].title).toStrictEqual('Declare missing members')
-      await vscode.workspace.applyEdit(codeActions[0].edit!)
+      const codeAction = await getCodeAction(testingDocument, `{ timeout: 456 }`, ACTION_NAME)
+      await vscode.workspace.applyEdit(codeAction.edit!)
 
       const documentText = getAllDocumentText(testingDocument)
       expect(documentText).toContain(await readFixture('new-http-client'))
@@ -92,29 +88,32 @@ describe('Acceptance tests', () => {
 })
 
 function createTestDeps() {
-  const getCodeActions = (
+  const getCodeAction = (
     document: vscode.TextDocument,
     textToSearchFor: string,
-  ): Promise<vscode.CodeAction[]> => {
+    codeActionName: string,
+  ): Promise<vscode.CodeAction> => {
     const line = getLineByText(document, textToSearchFor)
     const charNumber = line.text.indexOf(textToSearchFor)
 
     return waitForResponse(
-      async () =>
-        await vscode.commands.executeCommand<vscode.CodeAction[]>(
+      async () => {
+        const actions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
           'vscode.executeCodeActionProvider',
           document.uri,
           new vscode.Range(
             line.range.start.translate(0, charNumber),
             line.range.start.translate(0, charNumber + textToSearchFor.length),
           ),
-        ),
-      (response) => !!response?.length,
+        )
+        return actions?.find((x) => x.title === codeActionName)
+      },
+      (response) => !!response,
       'No code actions available',
     )
   }
 
   return {
-    getCodeActions,
+    getCodeAction,
   }
 }
