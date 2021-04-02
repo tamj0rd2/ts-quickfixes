@@ -8,7 +8,7 @@ describe('Helpers', () => {
   describe('findNodeAtPosition', () => {
     it('finds the node that has an error at a specific location', () => {
       const initializer = '{ greeting: "hello" }'
-      const [filePath, fileContent] = FsMocker.addFile(`
+      const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
         interface TargetType {
           greeting: string
         }
@@ -40,7 +40,7 @@ describe('Helpers', () => {
     }
 
     it('returns true if the symbols have the same members', () => {
-      const [filePath] = FsMocker.addFile(`
+      const [filePath] = FsMocker.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age: number
@@ -56,7 +56,7 @@ describe('Helpers', () => {
     })
 
     it('returns true if the symbol to compare has extra members', () => {
-      const [filePath] = FsMocker.addFile(`
+      const [filePath] = FsMocker.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age: number
@@ -73,7 +73,7 @@ describe('Helpers', () => {
     })
 
     it('returns false if the symbols do not have the same top level members', () => {
-      const [filePath] = FsMocker.addFile(`
+      const [filePath] = FsMocker.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age: number
@@ -88,7 +88,7 @@ describe('Helpers', () => {
     })
 
     it('returns true if the symbol to compare is missing an optional member', () => {
-      const [filePath] = FsMocker.addFile(`
+      const [filePath] = FsMocker.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age?: number
@@ -103,7 +103,7 @@ describe('Helpers', () => {
     })
 
     it('return false if the members are the same but the types are mismatched', () => {
-      const [filePath] = FsMocker.addFile(`
+      const [filePath] = FsMocker.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age: number
@@ -119,7 +119,7 @@ describe('Helpers', () => {
     })
 
     it('returns true if the symbols are deeply compatible', () => {
-      const [filePath] = FsMocker.addFile(`
+      const [filePath] = FsMocker.addFile(/* ts */ `
         interface NestedAsInterface {
           age: number
         }
@@ -139,7 +139,7 @@ describe('Helpers', () => {
     })
 
     it('returns false if the symbols are not deeply compatible', () => {
-      const [filePath] = FsMocker.addFile(`
+      const [filePath] = FsMocker.addFile(/* ts */ `
         interface NestedAsInterface {
           age: number
         }

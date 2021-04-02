@@ -15,7 +15,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for a variable declaration', () => {
     const initializer = `{ name: 'tam' }`
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
         interface TargetType {
           greeting: string
           name: string
@@ -42,7 +42,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for a nested object inside a variable declaration', () => {
     const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
         interface TargetType {
           greeting: string
           name: string
@@ -71,7 +71,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for a deeply nested object inside a variable declaration', () => {
     const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
         interface TargetType {
           greeting: string
           name: string
@@ -100,7 +100,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for missing inherited members', () => {
     const initializer = `{ name: 'tam' }`
-    const [importedFilePath] = FsMocker.addFile(`
+    const [importedFilePath] = FsMocker.addFile(/* ts */ `
       export interface GrandParentType {
         age: number
       }
@@ -110,7 +110,7 @@ describe('declareMissingObjectMembers', () => {
       }
     `)
 
-    const [targetFilePath, fileContent] = FsMocker.addFile(`
+    const [targetFilePath, fileContent] = FsMocker.addFile(/* ts */ `
       ${createImportStatement('ParentType', importedFilePath)}
 
       interface SiblingType {
@@ -143,12 +143,12 @@ describe('declareMissingObjectMembers', () => {
 
   it(`works for a nested object that's missing inherited members`, () => {
     const initializer = '{}'
-    const [otherFilePath] = FsMocker.addFile(`
+    const [otherFilePath] = FsMocker.addFile(/* ts */ `
       export interface Person {
         address: { city: string; postcode: string }
       }
     `)
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
       ${createImportStatement('Person', otherFilePath)}
 
       interface Employee extends Person {
@@ -174,7 +174,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for an object inside an array', () => {
     const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
       interface TargetType {
         greeting: string
         name: string
@@ -202,7 +202,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for function arguments', () => {
     const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
       interface TargetType {
         greeting: string
         name: string
@@ -228,7 +228,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for const arrow function arguments', () => {
     const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
       interface TargetType {
         greeting: string
         name: string
@@ -254,7 +254,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for const function arguments', () => {
     const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
       interface TargetType {
         greeting: string
         name: string
@@ -280,7 +280,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for objects that are nested inside a function argument', () => {
     const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
       interface TargetType {
         greeting: string
         name: string
@@ -310,7 +310,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for objects inside an array inside a function argument', () => {
     const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
       interface TargetType {
         greeting: string
         name: string
@@ -336,7 +336,7 @@ describe('declareMissingObjectMembers', () => {
 
   it('works for class constructors', () => {
     const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.addFile(`
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
       interface TargetType {
         greeting: string
         name: string
@@ -365,7 +365,7 @@ describe('declareMissingObjectMembers', () => {
   describe('scope', () => {
     it('can use locals that are in scope', () => {
       const initializer = '{}'
-      const [filePath, fileContent] = FsMocker.addFile(`
+      const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
         interface TargetType {
           greeting: string
           name: string
@@ -391,7 +391,7 @@ describe('declareMissingObjectMembers', () => {
 
     it('does not use a local in scope if the type is not sufficient', () => {
       const initializer = '{}'
-      const [filePath, fileContent] = FsMocker.addFile(`
+      const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
         interface TargetType {
           greeting: string
           name: string
