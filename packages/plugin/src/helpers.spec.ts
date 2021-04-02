@@ -3,7 +3,37 @@ import { TSH } from './helpers'
 import { createTestProgram, FsMocker, getNodeRange } from './test-helpers'
 
 describe('Helpers', () => {
+  beforeAll(() => FsMocker.init())
   afterEach(() => FsMocker.reset())
+
+  describe('findChildNode', () => {
+    it('can find child node that matches the given predicate', () => {
+      const [filePath] = FsMocker.addFile(/* ts */ `
+        interface Target {}
+      `)
+
+      const program = createTestProgram([filePath])
+      const sourceFile = program.getSourceFile(filePath)!
+
+      expect(TSH.findChildNode(sourceFile, ts.isInterfaceDeclaration, ':(')).toBeDefined()
+    })
+  })
+
+  describe('findParentNode', () => {
+    it('can find a parent node that matches the given predicate', () => {
+      const [filePath] = FsMocker.addFile(/* ts */ `
+        interface Target {
+          hello: string
+        }
+      `)
+
+      const program = createTestProgram([filePath])
+      const sourceFile = program.getSourceFile(filePath)!
+      const startingNode = TSH.findChildNode(sourceFile, ts.isPropertySignature, 'no property signature')
+
+      expect(TSH.findParentNode(startingNode, ts.isInterfaceDeclaration, ':(')).toBeDefined()
+    })
+  })
 
   describe('findNodeAtPosition', () => {
     it('finds the node that has an error at a specific location', () => {
