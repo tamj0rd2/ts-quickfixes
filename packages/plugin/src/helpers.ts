@@ -10,7 +10,7 @@ export namespace TSH {
   export function findChildNode<T extends ts.Node>(
     rootNode: ts.Node,
     predicate: (node: ts.Node) => node is T,
-    failureMessage = `could not find child node matching assertion ${predicate.name}`,
+    failureMessage: string,
   ): T {
     let foundNode: T | undefined
 

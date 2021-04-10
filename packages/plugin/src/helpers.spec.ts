@@ -3,7 +3,6 @@ import { TSH } from './helpers'
 import { createTestProgram, FsMocker, getNodeRange } from './test-helpers'
 
 describe('Helpers', () => {
-  beforeAll(() => FsMocker.init())
   afterEach(() => FsMocker.reset())
 
   describe('findChildNode', () => {
