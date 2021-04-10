@@ -31,6 +31,18 @@ describe('Acceptance tests', () => {
       expect(variableValue).toStrictEqual(await readFixture(variableName))
     })
 
+    it('declares missing members for Records', async () => {
+      const { getCodeAction } = createTestDeps()
+      const testFileUri = vscode.Uri.file(TS_FOLDER + '/generics.ts')
+      const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
+      await vscode.window.showTextDocument(testingDocument)
+
+      const codeAction = await getCodeAction(testingDocument, `aRecord`, ACTION_NAME)
+      await vscode.workspace.applyEdit(codeAction.edit!)
+
+      expect(getAllDocumentText(testingDocument)).toContain(await readFixture('generics'))
+    })
+
     it('declares missing members for function arguments', async () => {
       const { getCodeAction } = createTestDeps()
       const fileUri = vscode.Uri.file(TS_FOLDER + `/argument-members.ts`)
@@ -93,18 +105,12 @@ function createTestDeps() {
     textToSearchFor: string,
     codeActionName: string,
   ): Promise<vscode.CodeAction> => {
-    const line = getLineByText(document, textToSearchFor)
-    const charNumber = line.text.indexOf(textToSearchFor)
-
     return waitForResponse(
       async () => {
         const actions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
           'vscode.executeCodeActionProvider',
           document.uri,
-          new vscode.Range(
-            line.range.start.translate(0, charNumber),
-            line.range.start.translate(0, charNumber + textToSearchFor.length),
-          ),
+          getLineByText(document, textToSearchFor).range,
         )
         return actions?.find((x) => x.title === codeActionName)
       },

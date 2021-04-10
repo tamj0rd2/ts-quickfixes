@@ -53,6 +53,85 @@ describe('Helpers', () => {
     })
   })
 
+  describe('getMembers', () => {
+    const testCases: [string, string][] = [
+      [
+        'when the target is an InterfaceDeclaration',
+        /* ts */ `interface TargetType { firstName: string; lastName: string }`,
+      ],
+      [
+        'when the target is a TypeAliasDeclaration',
+        /* ts */ `
+        type TargetType = { firstName: string; lastName: string }
+
+        `,
+      ],
+      [
+        'when the target is a partial',
+        /* ts */ `type TargetType = Partial<{ firstName: string; lastName: string }>
+
+        `,
+      ],
+      [
+        'when the target is a record',
+        /* ts */ `type TargetType = Record<'firstName' | 'lastName', string>
+
+        `,
+      ],
+    ]
+
+    function getMembers(text: string): ReturnType<typeof TSH['getMembers']> {
+      const [filePath, fileContent] = FsMocker.addFile(text)
+      const program = createTestProgram([filePath])
+      const typeChecker = program.getTypeChecker()
+      const sourceFile = program.getSourceFile(filePath)!
+      const identifier = TSH.findNodeAtPosition(sourceFile, getNodeRange(fileContent, 'TargetType'))
+
+      const symbol = typeChecker.getSymbolAtLocation(identifier)
+      if (!symbol) throw new Error('Test setup failed. No symbol for TargetType')
+
+      return TSH.getMembers(symbol, typeChecker)
+    }
+
+    it.each(testCases)('works %s', (_, text) => {
+      const members = getMembers(text)
+
+      const expectedProperties = ['firstName', 'lastName']
+      expect(members.size).toBe(expectedProperties.length)
+      expectedProperties.forEach((name) =>
+        expect(members.get(name)!.type.flags).toIncludeBitwise(ts.TypeFlags.String),
+      )
+    })
+
+    it('works for records with literal values', () => {
+      const members = getMembers(/* ts */ `type TargetType = Record<'target', { hello: 'world' }>
+
+      `)
+
+      const member = members.get('target')!
+      expect(member.type.flags).toIncludeBitwise(ts.TypeFlags.Object)
+    })
+
+    it('works when there is no intermediary type refernece', () => {
+      const [
+        filePath,
+        fileContent,
+      ] = FsMocker.addFile(/* ts */ `export const target: Record<'hello', string> = { hello: 'hi' }
+      `)
+      const program = createTestProgram([filePath])
+      const typeChecker = program.getTypeChecker()
+      const sourceFile = program.getSourceFile(filePath)!
+      const identifier = TSH.findNodeAtPosition(sourceFile, getNodeRange(fileContent, 'target'))
+
+      const symbol = typeChecker.getSymbolAtLocation(identifier)
+      if (!symbol) throw new Error('Test setup failed. No symbol for TargetType')
+
+      const members = TSH.getMembers(symbol, typeChecker)
+      expect(members.size).toBe(1)
+      expect(members.get('hello')?.type.flags).toIncludeBitwise(ts.TypeFlags.String)
+    })
+  })
+
   describe('assertSymbolsAreCompatible', () => {
     const assertSymbolsAreCompatible = (filePath: string) => () => {
       const program = createTestProgram([filePath])

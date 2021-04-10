@@ -99,6 +99,7 @@ export namespace DeclareMissingObjectMembers {
     relevantNodes: ts.Node[],
   ): ts.Symbol {
     return relevantNodes.reduce<ts.Symbol>((trackedSymbol, node, index): ts.Symbol => {
+      const isFinalNode = index === relevantNodes.length - 1
       const trackedDeclaration = trackedSymbol.valueDeclaration ?? trackedSymbol.declarations[0]
       if (!trackedDeclaration) throw new Error('No declaration for the tracked symbol')
 
@@ -106,14 +107,12 @@ export namespace DeclareMissingObjectMembers {
       // logger.logNode(trackedDeclaration, 'trackedDeclaration')
 
       if (ts.isPropertyAssignment(node)) {
-        const memberName = node.name.getText() as ts.__String
-        const member = trackedSymbol.members?.get(memberName)
-        if (member) return member
+        const members = TSH.getMembers(trackedSymbol, typeChecker)
+        const memberName = node.name.getText()
+        const member = members.get(memberName)
+        if (member) return member.symbol
 
-        const inheritedMembers = TSH.getInheritedMemberSymbols(ts, typeChecker, trackedSymbol)
-        const inheritedMember = inheritedMembers.find((m) => m.name === memberName)
-        if (!inheritedMember) throw new Error(`Could not find member ${memberName}`)
-        return inheritedMember
+        throw new Error(`Could not find member ${memberName}`)
       }
 
       if (ts.isPropertySignature(trackedDeclaration)) {
@@ -126,7 +125,7 @@ export namespace DeclareMissingObjectMembers {
 
       if (ts.isVariableDeclaration(trackedDeclaration)) {
         if (trackedDeclaration.type) {
-          return TSH.deref(ts, typeChecker, trackedDeclaration.type)
+          return isFinalNode ? trackedSymbol : TSH.deref(ts, typeChecker, trackedDeclaration.type)
         }
 
         if (trackedDeclaration.initializer) {
@@ -141,7 +140,7 @@ export namespace DeclareMissingObjectMembers {
         return TSH.getTypeForCallArgument(ts, typeChecker, constructor, node)
       }
 
-      if (ts.isObjectLiteralExpression(node) && index === relevantNodes.length - 1) {
+      if (ts.isObjectLiteralExpression(node) && isFinalNode) {
         return trackedSymbol
       }
 

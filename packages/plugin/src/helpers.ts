@@ -92,7 +92,14 @@ export namespace TSH {
       return TSH.deref(ts, typeChecker, node.elementType)
     }
 
-    return typeChecker.getTypeFromTypeNode(node).symbol
+    const type = typeChecker.getTypeFromTypeNode(node)
+
+    if (ts.isTypeReferenceNode(node)) {
+      const { aliasSymbol } = type as ts.TypeReference
+      if (aliasSymbol) return aliasSymbol
+    }
+
+    return type.symbol
   }
 
   export function assert<T extends ts.Node>(
@@ -102,45 +109,22 @@ export namespace TSH {
     cast(node, assertion)
   }
 
-  export function getInheritedMemberSymbols(
-    ts: TSH.ts,
-    typeChecker: ts.TypeChecker,
-    symbol: ts.Symbol,
-  ): ts.Symbol[] {
-    const symbolDeclarationNode = symbol.valueDeclaration ?? symbol.declarations[0]
-    const members = getMembers(ts, typeChecker, symbol)
-
-    if (ts.isInterfaceDeclaration(symbolDeclarationNode)) {
-      const inheritedMemberSymbols = symbolDeclarationNode.heritageClauses
-        ?.flatMap((clause) => clause.types.map((type) => type.expression))
-        .filter(ts.isIdentifier)
-        .map((s) => typeChecker.getTypeAtLocation(s).symbol)
-        ?.filter((s): s is ts.Symbol => !!s)
-        .flatMap((inheritedSymbol) => getInheritedMemberSymbols(ts, typeChecker, inheritedSymbol))
-
-      inheritedMemberSymbols?.forEach((s) => !members.has(s.name) && members.set(s.name, s))
-    }
-    return Array.from(members.values())
+  interface Member {
+    symbol: ts.Symbol
+    type: ts.Type
   }
 
-  function getMembers(ts: ts, typeChecker: ts.TypeChecker, symbol: ts.Symbol): Map<string, ts.Symbol> {
-    const collectedMembers = new Map<string, ts.Symbol>()
-    if (symbol.members) {
-      symbol.members.forEach((m) => collectedMembers.set(m.name, m))
-      return collectedMembers
-    }
+  export function getMembers(symbol: ts.Symbol, typeChecker: ts.TypeChecker): Collection<string, Member> {
+    const declaration = symbol.valueDeclaration ?? symbol.getDeclarations()?.[0]
+    if (!declaration) throw new Error(`Could not find a declaration node for ${symbol.name}`)
 
-    if (
-      ts.isPropertySignature(symbol.valueDeclaration) &&
-      symbol.valueDeclaration.type &&
-      (ts.isTypeLiteralNode(symbol.valueDeclaration.type) ||
-        ts.isTypeReferenceNode(symbol.valueDeclaration.type))
-    ) {
-      const referencedSymbol = deref(ts, typeChecker, symbol.valueDeclaration.type)
-      return getMembers(ts, typeChecker, referencedSymbol)
-    }
-
-    return collectedMembers
+    return typeChecker
+      .getPropertiesOfType(typeChecker.getTypeAtLocation(declaration))
+      .reduce((members, symbol) => {
+        const type = typeChecker.getTypeOfSymbolAtLocation(symbol, declaration)
+        members.set(symbol.name, { symbol, type })
+        return members
+      }, new Collection<string, Member>())
   }
 
   // make this throw useful errors instead of returning a bool
@@ -150,22 +134,22 @@ export namespace TSH {
     expectedSymbol: ts.Symbol,
     symbolToCompare: ts.Symbol,
   ): void {
-    const topLevelExpectedMembers = getMembers(ts, typeChecker, expectedSymbol)
-    const topLevelCompareMembers = getMembers(ts, typeChecker, symbolToCompare)
+    const topLevelExpectedMembers = getMembers(expectedSymbol, typeChecker)
+    const topLevelCompareMembers = getMembers(symbolToCompare, typeChecker)
 
-    for (const expectedMember of topLevelExpectedMembers.values()) {
-      const memberToCompare = topLevelCompareMembers.get(expectedMember.name)
-      if (!memberToCompare) {
-        if (expectedMember.flags & ts.SymbolFlags.Optional) continue
-        throw new Error(`Required member "${expectedMember.name}" missing`)
+    for (const { symbol: expectedSymbol } of topLevelExpectedMembers.toArray()) {
+      const symbolToCompare = topLevelCompareMembers.get(expectedSymbol.name)?.symbol
+      if (!symbolToCompare) {
+        if (expectedSymbol.flags & ts.SymbolFlags.Optional) continue
+        throw new Error(`Required member "${expectedSymbol.name}" missing`)
       }
 
-      const memberType = typeChecker.getTypeAtLocation(expectedMember.valueDeclaration)
-      const compareType = typeChecker.getTypeAtLocation(memberToCompare.valueDeclaration)
+      const memberType = typeChecker.getTypeAtLocation(expectedSymbol.valueDeclaration)
+      const compareType = typeChecker.getTypeAtLocation(symbolToCompare.valueDeclaration)
       if (compareType.flags !== memberType.flags)
-        throw new Error(`Symbol flags for "${expectedMember.name}" do not match`)
+        throw new Error(`Symbol flags for "${expectedSymbol.name}" do not match`)
 
-      assertSymbolsAreCompatible(ts, typeChecker, expectedMember, memberToCompare)
+      assertSymbolsAreCompatible(ts, typeChecker, expectedSymbol, symbolToCompare)
     }
   }
 
@@ -253,34 +237,33 @@ export namespace TSH {
       initializer: ts.ObjectLiteralExpression,
       expectedSymbol: ts.Symbol,
     ): string {
-      if (!expectedSymbol.members) throw new Error('Symbol has no members property')
+      const expectedMembers = getMembers(expectedSymbol, typeChecker)
+      if (!expectedMembers.size) throw new Error('Symbol has no members')
+
       const { symbol: initializerSymbol } = typeChecker.getTypeAtLocation(initializer)
       const symbolsInScope = typeChecker
         .getSymbolsInScope(initializer, ts.SymbolFlags.ModuleMember)
         .filter((s) => s.valueDeclaration?.getSourceFile() === sourceFile)
-      // .filter((x) => x.flags & ts.SymbolFlags.FunctionScopedVariable)
 
-      const additionalProperties = new Map<ts.__String, ts.PropertyAssignment>()
-      function addNewPropertyAssignment(member: ts.Symbol): void {
-        const memberName = member.name as ts.__String
-        if (initializerSymbol.members?.has(memberName) || additionalProperties.has(memberName)) return
+      const additionalProperties = getMembers(expectedSymbol, typeChecker)
+        .toArray()
+        .reduce((additionalProperties, member) => {
+          const memberName = member.symbol.name
+          if (
+            initializerSymbol.members?.has(memberName as ts.__String) ||
+            additionalProperties.has(memberName)
+          )
+            return additionalProperties
 
-        additionalProperties.set(
-          memberName,
-          ts.factory.createPropertyAssignment(
-            member.name,
-            isMatchingIdentifierInScope(ts, typeChecker, member, symbolsInScope)
-              ? ts.factory.createIdentifier(member.name)
-              : expressionFromSymbol(member, ts, typeChecker),
-          ),
-        )
-      }
-
-      expectedSymbol.members.forEach(addNewPropertyAssignment)
-      getInheritedMemberSymbols(ts, typeChecker, expectedSymbol).forEach(addNewPropertyAssignment)
+          additionalProperties.set(
+            memberName,
+            createPropertyAssignment(ts, typeChecker, symbolsInScope, member),
+          )
+          return additionalProperties
+        }, new Collection<string, ts.PropertyAssignment>())
 
       const replacedInitializer = ts.factory.createObjectLiteralExpression(
-        [...initializer.properties, ...additionalProperties.values()],
+        [...initializer.properties, ...additionalProperties.toArray()],
         true,
       )
 
@@ -292,46 +275,63 @@ export namespace TSH {
         .printNode(ts.EmitHint.Unspecified, initializer, sourceFile)
     }
 
-    function expressionFromSymbol(
-      memberSymbol: ts.Symbol,
+    function createPropertyAssignment(
+      ts: TSH.ts,
+      typeChecker: ts.TypeChecker,
+      symbolsInScope: ts.Symbol[],
+      member: Member,
+    ): ts.PropertyAssignment {
+      const name = member.symbol.name
+      const nameNode = name.includes(' ') ? ts.factory.createStringLiteral(name, true) : name
+      const initializerNode = isMatchingIdentifierInScope(ts, typeChecker, member.symbol, symbolsInScope)
+        ? ts.factory.createIdentifier(member.symbol.name)
+        : expressionFromMember(member, ts, typeChecker, symbolsInScope)
+
+      return ts.factory.createPropertyAssignment(nameNode, initializerNode)
+    }
+
+    function expressionFromMember(
+      member: Member,
       ts: ts,
       typeChecker: ts.TypeChecker,
+      symbolsInScope: ts.Symbol[],
     ): ts.Expression {
-      const propertySignature = memberSymbol.valueDeclaration
-      if (!ts.isPropertySignature(propertySignature))
-        throw new Error('The given symbol is not a property signature')
+      const { symbol, type } = member
+      const declaration: ts.Declaration | undefined = symbol.valueDeclaration ?? symbol.getDeclarations()?.[0]
 
-      if (propertySignature.type && ts.isLiteralTypeNode(propertySignature.type)) {
-        if (propertySignature.type.literal.kind === ts.SyntaxKind.TrueKeyword) {
-          return ts.factory.createTrue()
+      if (declaration && ts.isPropertySignature(declaration) && declaration.type) {
+        if (ts.isLiteralTypeNode(declaration.type)) {
+          if (declaration.type.literal.kind === ts.SyntaxKind.TrueKeyword) {
+            return ts.factory.createTrue()
+          }
+
+          if (declaration.type.literal.kind === ts.SyntaxKind.FalseKeyword) {
+            return ts.factory.createFalse()
+          }
         }
 
-        if (propertySignature.type.literal.kind === ts.SyntaxKind.FalseKeyword) {
-          return ts.factory.createFalse()
+        if (ts.isArrayTypeNode(declaration.type)) {
+          return ts.factory.createArrayLiteralExpression()
+        }
+
+        if (ts.isTypeReferenceNode(declaration.type)) {
+          const symbol = deref(ts, typeChecker, declaration.type)
+          const type = typeChecker.getTypeFromTypeNode(declaration.type)
+          return expressionFromMember({ symbol, type }, ts, typeChecker, symbolsInScope)
+        }
+
+        if (ts.isTypeLiteralNode(declaration.type)) {
+          const type = typeChecker.getTypeFromTypeNode(declaration.type)
+          return expressionFromMember({ symbol: type.symbol, type }, ts, typeChecker, symbolsInScope)
         }
       }
 
-      if (propertySignature.type && ts.isArrayTypeNode(propertySignature.type)) {
-        return ts.factory.createArrayLiteralExpression()
-      }
+      if (type.isStringLiteral()) return ts.factory.createStringLiteral(type.value, true)
+      if (type.isNumberLiteral()) return ts.factory.createNumericLiteral(type.value)
 
-      if (propertySignature.type && ts.isArrayTypeNode(propertySignature.type)) {
-        return ts.factory.createArrayLiteralExpression()
-      }
-
-      const type = typeChecker.getTypeAtLocation(propertySignature)
-
-      if (type.flags & ts.TypeFlags.String) {
-        return ts.factory.createStringLiteral('todo', true)
-      }
-
-      if (type.flags & ts.TypeFlags.Number) {
-        return ts.factory.createNumericLiteral(0)
-      }
-
-      if (type.flags & ts.TypeFlags.Boolean) {
-        return ts.factory.createFalse()
-      }
+      if (type.flags & ts.TypeFlags.String) return ts.factory.createStringLiteral('todo', true)
+      if (type.flags & ts.TypeFlags.Number) return ts.factory.createNumericLiteral(0)
+      if (type.flags & ts.TypeFlags.Boolean) return ts.factory.createFalse()
 
       if (type.flags & ts.TypeFlags.EnumLiteral && type.isUnionOrIntersection() && type.aliasSymbol) {
         const firstEnumMember = (type.aliasSymbol.exports?.keys().next().value as ts.__String)?.toString()
@@ -344,24 +344,106 @@ export namespace TSH {
           : ts.factory.createNull()
       }
 
-      if (type.symbol) {
-        const typeDeclaration = type.symbol.valueDeclaration ?? type.symbol.declarations[0]
-        if (ts.isTypeLiteralNode(typeDeclaration) || ts.isInterfaceDeclaration(typeDeclaration)) {
-          const properties: ts.PropertyAssignment[] = []
-          type.symbol.members?.forEach((member) => {
-            properties.push(
-              ts.factory.createPropertyAssignment(member.name, expressionFromSymbol(member, ts, typeChecker)),
-            )
+      if (declaration && (ts.isTypeLiteralNode(declaration) || ts.isInterfaceDeclaration(declaration))) {
+        const properties: ts.PropertyAssignment[] = []
+        getMembers(symbol, typeChecker)
+          .toArray()
+          .forEach((member) => {
+            properties.push(createPropertyAssignment(ts, typeChecker, symbolsInScope, member))
           })
-          return ts.factory.createObjectLiteralExpression(properties, true)
-        }
+        return ts.factory.createObjectLiteralExpression(properties, true)
+      }
 
-        if (type.symbol.name === 'Date') {
-          return ts.factory.createNewExpression(ts.factory.createIdentifier('Date'), undefined, [])
-        }
+      if (symbol.name === 'Date') {
+        return ts.factory.createNewExpression(ts.factory.createIdentifier('Date'), undefined, [])
       }
 
       return ts.factory.createNull()
+    }
+  }
+
+  type CollectionKey = string | number | symbol
+
+  export class Collection<K extends CollectionKey, V = unknown> {
+    private readonly internalMap: Map<K, V>
+
+    public constructor(entries?: readonly (readonly [K, V])[] | null) {
+      this.internalMap = new Map<K, V>(entries)
+    }
+
+    public static FromRecord<K extends string, Item>(entries: Record<K, Item>): Collection<K, Item> {
+      return new Collection(Object.entries(entries) as [K, Item][])
+    }
+
+    public static fromArray<K extends CollectionKey, Item>(
+      items: Item[],
+      getKey: (item: Item) => K,
+    ): Collection<K, Item> {
+      const entries = items.map<[K, Item]>((item) => [getKey(item), item])
+      return new Collection<K, Item>(entries)
+    }
+
+    public toArray(): V[] {
+      return Array.from(this.internalMap.values())
+    }
+
+    public toEntries(): [K, V][] {
+      return Array.from(this.internalMap.entries())
+    }
+
+    public toRecord(): Record<K, V> {
+      return this.toEntries().reduce(
+        (accum, [key, value]) => ({ ...accum, [key]: value }),
+        {} as Record<K, V>,
+      )
+    }
+
+    public serialize(): Record<K, V> {
+      return this.toRecord()
+    }
+
+    public set(key: K, value: V): this {
+      this.internalMap.set(key, value)
+      return this
+    }
+
+    public get(key: K): V | undefined {
+      return this.internalMap.get(key)
+    }
+
+    public has(key: K): boolean {
+      return this.internalMap.has(key)
+    }
+
+    public delete(key: K): boolean {
+      return this.internalMap.delete(key)
+    }
+
+    public map<T>(fn: (item: V) => T): Collection<K, T> {
+      return this.reduce((accum, [id, item]) => {
+        accum.set(id, fn(item))
+        return accum
+      }, new Collection<K, T>())
+    }
+
+    public reduce<T>(fn: (accum: T, entry: [K, V], index: number) => T, defaultValue: T): T {
+      return this.toEntries().reduce(fn, defaultValue)
+    }
+
+    public forEach(fn: (entry: [K, V], index: number) => void): void {
+      return this.toEntries().forEach(fn)
+    }
+
+    public get size(): number {
+      return this.internalMap.size
+    }
+
+    public find(predicate: (value: V) => boolean): V | undefined {
+      return this.toArray().find(predicate)
+    }
+
+    public [Symbol.iterator](): IterableIterator<[K, V]> {
+      return this.internalMap.entries()
     }
   }
 }

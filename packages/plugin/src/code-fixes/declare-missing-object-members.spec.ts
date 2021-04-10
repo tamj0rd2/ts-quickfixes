@@ -16,10 +16,16 @@ describe('declareMissingObjectMembers', () => {
   it('works for a variable declaration', () => {
     const initializer = `{ name: 'tam' }`
     const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
+        interface Goodbye {
+          world: string
+        }
+
         interface TargetType {
           greeting: string
           name: string
           age: number
+          hello: { world: string }
+          goodbye: Goodbye
         }
         
         export const target: TargetType = ${initializer}
@@ -31,7 +37,13 @@ describe('declareMissingObjectMembers', () => {
       errorPos: getNodeRange(fileContent, 'target'),
     })
 
-    expect(newText).toMatchInitializer({ name: 'tam', greeting: 'todo', age: 0 })
+    expect(newText).toMatchInitializer({
+      name: 'tam',
+      greeting: 'todo',
+      age: 0,
+      hello: { world: 'todo' },
+      goodbye: { world: 'todo' },
+    })
   })
 
   it('works for a nested object inside a variable declaration', () => {
@@ -355,6 +367,52 @@ describe('declareMissingObjectMembers', () => {
       })
 
       expect(newText).toMatchInitializer({ target: { greeting: 'todo', name: 'todo' } })
+    })
+  })
+
+  describe('generics', () => {
+    it('works for records with basic values', () => {
+      const initializer = '{}'
+      const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
+        export const target: Record<'greeting' | 'name', string> = {}
+      `)
+
+      const newText = getNewText({
+        filePath,
+        initializerPos: getNodeRange(fileContent, initializer),
+      })
+
+      expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
+    })
+
+    it('works for records with conditional values', () => {
+      const initializer = '{}'
+      const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
+        type TargetType = {[K in 'A' | 'B']: K extends 'A' ? 'yay' : 101 }
+        export const target: TargetType = {}
+      `)
+
+      const newText = getNewText({
+        filePath,
+        initializerPos: getNodeRange(fileContent, initializer),
+      })
+
+      expect(newText).toMatchInitializer({ A: 'yay', B: 101 })
+    })
+
+    it('works with union type keys', () => {
+      const initializer = '{}'
+      const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
+        type TargetType = Record<'Hello world' | 'Cya', string>
+        export const target: TargetType = {}
+      `)
+
+      const newText = getNewText({
+        filePath,
+        initializerPos: getNodeRange(fileContent, initializer),
+      })
+
+      expect(newText).toMatchInitializer({ 'Hello world': 'todo', Cya: 'todo' })
     })
   })
 })

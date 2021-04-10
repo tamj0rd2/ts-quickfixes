@@ -1,0 +1,4 @@
+export const aRecord: Record<ValuesUnion, AnInterfaceWithAUnion['keys']> = {
+    top: null,
+    bottom: null
+}

@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-var-requires */
 import { fs as memfs, vol } from 'memfs'
 import * as fs from 'fs'
 import { ufs } from 'unionfs'
 import { resolve } from 'path'
 import ts from 'typescript/lib/tsserverlibrary'
 import { Logger } from './provider'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { patchFs } = require('fs-monkey')
 
 export const REPO_ROOT = resolve(__dirname, '../../..')
@@ -17,6 +16,7 @@ export class FsMocker {
   public static init(): void {
     FsMocker.isInitialized = true
     vol.mkdirSync(process.cwd(), { recursive: true })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ufs.use(vol as any).use(FsMocker.originalFs)
     patchFs(ufs)
   }

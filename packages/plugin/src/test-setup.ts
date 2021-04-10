@@ -3,6 +3,7 @@ export interface BuildOpts {
   doNotFormatStrings?: boolean
 }
 
+// TODO: would be REALLY nice to use this in e2e tests too
 export class ObjectBuilder {
   private readonly lines: string[] = []
   private readonly indent = ' '.repeat(4)
@@ -20,7 +21,8 @@ export class ObjectBuilder {
   }
 
   private with(name: string, value: ObjectProperties[string], opts: BuildOpts): ObjectBuilder {
-    this.lines.push(`${this.indent}${name}: ${this.formatValue(value, opts)}`)
+    const sanitizedName = name.includes(' ') ? `'${name}'` : name
+    this.lines.push(`${this.indent}${sanitizedName}: ${this.formatValue(value, opts)}`)
     return this
   }
 
@@ -43,12 +45,13 @@ declare global {
   namespace jest {
     interface Matchers<R> {
       toMatchInitializer(expectedProperties: ObjectProperties, opts?: BuildOpts): R
+      toIncludeBitwise(expected: number): R
     }
   }
 }
 
 expect.extend({
-  toMatchInitializer: function blah(
+  toMatchInitializer: function (
     this: jest.MatcherContext,
     received: string,
     expectedProperties: ObjectProperties,
@@ -61,6 +64,13 @@ expect.extend({
     } catch (err) {
       if (err.matcherResult) return err.matcherResult
       throw err
+    }
+  },
+  toIncludeBitwise: function (this: jest.MatcherContext, receivedValue: number, expectedBitwise: number) {
+    return {
+      pass: (receivedValue & expectedBitwise) === expectedBitwise,
+      message: () =>
+        this.utils.matcherHint('toIncludeBitwise', receivedValue.toString(), expectedBitwise.toString()),
     }
   },
 })
