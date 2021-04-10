@@ -8,7 +8,7 @@
     "out"
   ],
   "scripts": {
-    "test": "jest",
+    "test": "jest --runInBand",
     "shipit": "semantic-release"
   },
   "keywords": [],

@@ -14,6 +14,8 @@ export class FsMocker {
   private static originalFs = { ...fs }
 
   public static init(): void {
+    if (this.isInitialized) return
+
     FsMocker.isInitialized = true
     vol.mkdirSync(process.cwd(), { recursive: true })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
