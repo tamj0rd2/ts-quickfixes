@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.8.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.7.0...ts-quickfixes-plugin-v1.8.0) (2021-04-10)
+
+
+### Features
+
+* add basic support for Records ([fa38756](https://github.com/tamj0rd2/ts-quickfixes/commit/fa3875632fc6ca85e847e80a640293a1be81cf4b)), closes [#128](https://github.com/tamj0rd2/ts-quickfixes/issues/128)
+
 # [ts-quickfixes-plugin-v1.7.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.6.0...ts-quickfixes-plugin-v1.7.0) (2021-03-20)
 
 
