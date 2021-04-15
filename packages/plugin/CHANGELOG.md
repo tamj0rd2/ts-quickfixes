@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.8.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.8.0...ts-quickfixes-plugin-v1.8.1) (2021-04-15)
+
+
+### Bug Fixes
+
+* **plugin:** wrap invalid object keys with quotes ([c5b8b97](https://github.com/tamj0rd2/ts-quickfixes/commit/c5b8b97662914507a174cf13314c487831d7887c)), closes [#157](https://github.com/tamj0rd2/ts-quickfixes/issues/157)
+
 # [ts-quickfixes-plugin-v1.8.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.7.0...ts-quickfixes-plugin-v1.8.0) (2021-04-10)
 
 
