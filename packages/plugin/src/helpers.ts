@@ -153,6 +153,10 @@ export namespace TSH {
     }
   }
 
+  export function isValidPropertyName(name: string): boolean {
+    return /^[0-9]+$/.test(name) || /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(name)
+  }
+
   export function areSymbolsCompatible(
     ts: ts,
     typeChecker: ts.TypeChecker,
@@ -282,7 +286,7 @@ export namespace TSH {
       member: Member,
     ): ts.PropertyAssignment {
       const name = member.symbol.name
-      const nameNode = name.includes(' ') ? ts.factory.createStringLiteral(name, true) : name
+      const nameNode = isValidPropertyName(name) ? name : ts.factory.createStringLiteral(name, true)
       const initializerNode = isMatchingIdentifierInScope(ts, typeChecker, member.symbol, symbolsInScope)
         ? ts.factory.createIdentifier(member.symbol.name)
         : expressionFromMember(member, ts, typeChecker, symbolsInScope)

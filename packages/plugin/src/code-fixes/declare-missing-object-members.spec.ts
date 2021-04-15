@@ -16,14 +16,14 @@ describe('declareMissingObjectMembers', () => {
     const initializer = `{ name: 'tam' }`
     const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
         interface Goodbye {
-          world: string
+          'sweet-planet': string
         }
 
         interface TargetType {
           greeting: string
           name: string
           age: number
-          hello: { world: string }
+          hello: { 'my/dear': string }
           goodbye: Goodbye
         }
         
@@ -40,8 +40,8 @@ describe('declareMissingObjectMembers', () => {
       name: 'tam',
       greeting: 'todo',
       age: 0,
-      hello: { world: 'todo' },
-      goodbye: { world: 'todo' },
+      hello: { 'my/dear': 'todo' },
+      goodbye: { 'sweet-planet': 'todo' },
     })
   })
 

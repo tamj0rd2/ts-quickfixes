@@ -1,3 +1,5 @@
+import { TSH } from './helpers'
+
 export type ObjectProperties = { [K in string]: ObjectProperties | string | boolean | null | number }
 export interface BuildOpts {
   doNotFormatStrings?: boolean
@@ -21,7 +23,7 @@ export class ObjectBuilder {
   }
 
   private with(name: string, value: ObjectProperties[string], opts: BuildOpts): ObjectBuilder {
-    const sanitizedName = name.includes(' ') ? `'${name}'` : name
+    const sanitizedName = TSH.isValidPropertyName(name) ? name : `'${name}'`
     this.lines.push(`${this.indent}${sanitizedName}: ${this.formatValue(value, opts)}`)
     return this
   }
