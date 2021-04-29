@@ -1,0 +1,29 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: "@types/node"
+    versions:
+    - ">=15.x"
+  - dependency-name: "@typescript-eslint/parser"
+    versions:
+    - 4.21.0
+  - dependency-name: "@typescript-eslint/eslint-plugin"
+    versions:
+    - 4.21.0
+  - dependency-name: "@types/fs-extra"
+    versions:
+    - 9.0.10
+  - dependency-name: eslint-plugin-jest
+    versions:
+    - 24.3.4
+  - dependency-name: memfs
+    versions:
+    - 3.2.2
+  - dependency-name: fs-monkey
+    versions:
+    - 1.0.3
