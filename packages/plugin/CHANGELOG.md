@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.9.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.8.1...ts-quickfixes-plugin-v1.9.0) (2021-05-10)
+
+
+### Features
+
+* only shallowly declare missing members ([cd8b749](https://github.com/tamj0rd2/ts-quickfixes/commit/cd8b749c3a3ad7369016d09da86fd5db3c4a4e56)), closes [#160](https://github.com/tamj0rd2/ts-quickfixes/issues/160)
+
 # [ts-quickfixes-plugin-v1.8.1](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.8.0...ts-quickfixes-plugin-v1.8.1) (2021-04-15)
 
 
