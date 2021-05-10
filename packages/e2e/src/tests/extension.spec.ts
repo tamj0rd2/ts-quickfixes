@@ -84,14 +84,17 @@ describe('Acceptance tests', () => {
       expect(documentText).toContain(await readFixture('compensation'))
     })
 
-    it('declares missing members for constructor arguments using locals if available', async () => {
+    it('declares missing members for constructor arguments and methods using locals if available', async () => {
       const { getCodeAction } = createTestDeps()
       const testFileUri = vscode.Uri.file(TS_FOLDER + '/constructor-argument-members.ts')
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 
-      const codeAction = await getCodeAction(testingDocument, `{ timeout: 456 }`, ACTION_NAME)
-      await vscode.workspace.applyEdit(codeAction.edit!)
+      const constructorAction = await getCodeAction(testingDocument, `{ timeout: 456 }`, ACTION_NAME)
+      await vscode.workspace.applyEdit(constructorAction.edit!)
+
+      const methodAction = await getCodeAction(testingDocument, `makeRequest({})`, ACTION_NAME)
+      await vscode.workspace.applyEdit(methodAction.edit!)
 
       const documentText = getAllDocumentText(testingDocument)
       expect(documentText).toContain(await readFixture('new-http-client'))
