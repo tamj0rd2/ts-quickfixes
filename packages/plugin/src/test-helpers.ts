@@ -1,16 +1,27 @@
+import { fs as memfs, vol } from 'memfs'
+import * as fs from 'fs'
+import { ufs } from 'unionfs'
 import { resolve } from 'path'
-import _mockFs from 'mock-fs'
 import ts from 'typescript/lib/tsserverlibrary'
 import { Logger } from './provider'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { patchFs } = require('fs-monkey')
 
 export const REPO_ROOT = resolve(__dirname, '../../..')
 
 export class FsMocker {
-  private static nodeModulesPath = REPO_ROOT + '/node_modules'
-  private static tsLibPath = FsMocker.nodeModulesPath + '/typescript/lib'
-  private static tsLibFolder = _mockFs.load(FsMocker.tsLibPath)
-  private static jestConsolePath = FsMocker.nodeModulesPath + '/@jest/console'
-  private static jestConsoleFolder = _mockFs.load(FsMocker.jestConsolePath)
+  private static isInitialized = false
+  private static originalFs = { ...fs }
+
+  public static init(): void {
+    if (this.isInitialized) return
+
+    FsMocker.isInitialized = true
+    vol.mkdirSync(process.cwd(), { recursive: true })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ufs.use(vol as any).use(FsMocker.originalFs)
+    patchFs(ufs)
+  }
 
   private static readonly files = new Map<string, string>()
 
@@ -18,28 +29,17 @@ export class FsMocker {
     return Array.from(this.files.keys())
   }
 
-  public static addFile(content: string, filePath = `mySourceFile${this.files.size}.ts`): [string, string] {
+  public static addFile(content: string): [string, string] {
+    if (!this.isInitialized) throw new Error('You forgot to initialize me...')
+
+    const filePath = `sourcefile-${this.files.size}.ts`
     FsMocker.files.set(filePath, content)
-    FsMocker.commit()
+    memfs.writeFileSync(filePath, content)
     return [filePath, content]
   }
 
   public static reset(): void {
     this.files.clear()
-    return _mockFs.restore()
-  }
-
-  private static commit(): void {
-    const filesRecord = [...FsMocker.files.entries()].reduce<Record<string, string>>(
-      (files, [fileName, fileContent]) => ({ ...files, [fileName]: fileContent }),
-      {},
-    )
-
-    _mockFs({
-      [FsMocker.tsLibPath]: FsMocker.tsLibFolder,
-      [FsMocker.jestConsolePath]: FsMocker.jestConsoleFolder,
-      ...filesRecord,
-    })
   }
 }
 
@@ -87,8 +87,8 @@ export function createTestProgram(fileNames: string[], allowedErrorCodes: number
   return program
 }
 
-export function createImportStatement(importName: string, importFilePath: string): string {
-  return `import { ${importName} } from './${importFilePath.replace('.ts', '')}'`
+export function createImportStatement(importName: string, relativeFilePath: string): string {
+  return `import { ${importName} } from './${relativeFilePath.replace('.ts', '')}'`
 }
 
 export function createDummyLogger(enableLogging = false): Logger {
