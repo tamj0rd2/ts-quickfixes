@@ -10,7 +10,6 @@ import {
 } from '../test-helpers'
 
 describe('declareMissingObjectMembers', () => {
-  beforeAll(() => FsMocker.init())
   afterEach(() => FsMocker.reset())
 
   it('works for a variable declaration', () => {
