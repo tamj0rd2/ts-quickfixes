@@ -40,8 +40,8 @@ describe('declareMissingObjectMembers', () => {
       name: 'tam',
       greeting: 'todo',
       age: 0,
-      hello: { 'my/dear': 'todo' },
-      goodbye: { 'sweet-planet': 'todo' },
+      hello: null,
+      goodbye: null,
     })
   })
 
@@ -365,7 +365,7 @@ describe('declareMissingObjectMembers', () => {
         errorPos: getNodeRange(fileContent, 'something'),
       })
 
-      expect(newText).toMatchInitializer({ target: { greeting: 'todo', name: 'todo' } })
+      expect(newText).toMatchInitializer({ target: null })
     })
   })
 

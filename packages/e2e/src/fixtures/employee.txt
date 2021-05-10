@@ -3,13 +3,7 @@
     firstName: 'todo',
     lastName: 'todo',
     birthday: new Date(),
-    address: {
-        city: 'todo',
-        postcode: 'todo'
-    },
-    mobileNumber: {
-        countryCode: 'todo',
-        phoneNumber: 0
-    },
+    address: null,
+    mobileNumber: null,
     status: null
 }

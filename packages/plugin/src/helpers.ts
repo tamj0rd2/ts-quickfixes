@@ -349,13 +349,15 @@ export namespace TSH {
       }
 
       if (declaration && (ts.isTypeLiteralNode(declaration) || ts.isInterfaceDeclaration(declaration))) {
-        const properties: ts.PropertyAssignment[] = []
-        getMembers(symbol, typeChecker)
-          .toArray()
-          .forEach((member) => {
-            properties.push(createPropertyAssignment(ts, typeChecker, symbolsInScope, member))
-          })
-        return ts.factory.createObjectLiteralExpression(properties, true)
+        // TODO: write an additional fix that can deeply declare members using the code below
+        // const properties: ts.PropertyAssignment[] = []
+        // getMembers(symbol, typeChecker)
+        //   .toArray()
+        //   .forEach((member) => {
+        //     properties.push(createPropertyAssignment(ts, typeChecker, symbolsInScope, member))
+        //   })
+        // return ts.factory.createObjectLiteralExpression(properties, true)
+        return ts.factory.createNull()
       }
 
       if (symbol.name === 'Date') {
