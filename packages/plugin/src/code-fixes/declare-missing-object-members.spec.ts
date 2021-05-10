@@ -315,6 +315,31 @@ describe('declareMissingObjectMembers', () => {
     expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
+  it('works for method calls', () => {
+    const initializer = '{}'
+    const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
+      interface TargetType {
+        greeting: string
+        name: string
+      }
+
+      class MyClass {
+        public method(targetType: TargetType) {}
+      }
+
+      new MyClass().method(${initializer})
+    `)
+
+    const newText = getNewText({
+      filePath,
+      initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
+    })
+
+    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
+  })
+
+  it.todo('works for function and method returns')
+
   describe('scope', () => {
     it('can use locals that are in scope', () => {
       const initializer = '{}'

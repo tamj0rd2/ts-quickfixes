@@ -2,4 +2,7 @@ const client = new HttpClient({
     timeout: 456,
     baseUrl: baseUrl,
     operation: 'todo'
+}).makeRequest({
+    method: 'todo',
+    endpoint: 'todo'
 })

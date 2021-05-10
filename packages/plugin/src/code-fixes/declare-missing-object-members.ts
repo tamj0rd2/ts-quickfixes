@@ -79,6 +79,14 @@ export namespace DeclareMissingObjectMembers {
       }
 
       if (ts.isCallExpression(node) || ts.isNewExpression(node)) {
+        if (ts.isPropertyAccessExpression(node.expression)) {
+          const identifier = TSH.cast(node.expression.name, ts.isIdentifier)
+          return {
+            relevantNodes,
+            topLevelSymbol: TSH.deref(ts, typeChecker, identifier),
+          }
+        }
+
         const identifier = TSH.cast(node.expression, ts.isIdentifier)
         return {
           relevantNodes,
