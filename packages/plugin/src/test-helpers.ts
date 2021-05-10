@@ -1,5 +1,5 @@
 import { fs as memfs, vol } from 'memfs'
-import * as fs from 'fs'
+import * as realFs from 'fs'
 import { ufs } from 'unionfs'
 import { resolve } from 'path'
 import ts from 'typescript/lib/tsserverlibrary'
@@ -11,13 +11,16 @@ export const REPO_ROOT = resolve(__dirname, '../../..')
 
 export class FsMocker {
   private static isInitialized = false
-  private static originalFs = { ...fs }
+  private static originalFs = { ...realFs }
 
   public static init(): void {
     if (this.isInitialized) return
 
     FsMocker.isInitialized = true
+    console.log({ cwd: process.cwd(), REPO_ROOT })
+
     vol.mkdirSync(process.cwd(), { recursive: true })
+    vol.mkdirSync(resolve(process.cwd(), 'fixtures'), { recursive: true })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ufs.use(vol as any).use(FsMocker.originalFs)
     patchFs(ufs)
@@ -32,9 +35,15 @@ export class FsMocker {
   public static addFile(content: string): [string, string] {
     if (!this.isInitialized) throw new Error('You forgot to initialize me...')
 
-    const filePath = `sourcefile-${this.files.size}.ts`
+    const filePath = resolve(process.cwd(), 'fixtures', `sourcefile-${this.files.size}.ts`)
+    console.log({ filePath })
     FsMocker.files.set(filePath, content)
-    memfs.writeFileSync(filePath, content)
+    // memfs.writeFileSync(filePath, content)
+
+    // vol.writeFileSync(filePath, content)
+    ufs.writeFileSync(filePath, content)
+    console.log(ufs.readFileSync(filePath, 'utf-8'))
+
     return [filePath, content]
   }
 
@@ -87,8 +96,8 @@ export function createTestProgram(fileNames: string[], allowedErrorCodes: number
   return program
 }
 
-export function createImportStatement(importName: string, relativeFilePath: string): string {
-  return `import { ${importName} } from './${relativeFilePath.replace('.ts', '')}'`
+export function createImportStatement(importName: string, absoluteFilePath: string): string {
+  return `import { ${importName} } from '${absoluteFilePath.replace('.ts', '')}'`
 }
 
 export function createDummyLogger(enableLogging = false): Logger {

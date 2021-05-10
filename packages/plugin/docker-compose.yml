@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  unit-tests:
+    image: node:alpine
+    working_dir: /usr/app/packages/plugin
+    volumes:
+      - ./package.json:/usr/app/packages/plugin/package.json
+      - ./tsconfig.json:/usr/app/packages/plugin/tsconfig.json
+      - ./jest.config.js:/usr/app/packages/plugin/jest.config.js
+      - ./src:/usr/app/packages/plugin/src
+      - ../../tsconfig.base.json:/usr/app/tsconfig.base.json
+      - ../../node_modules:/usr/app/node_modules
+    command: npm run test -- code-fixes

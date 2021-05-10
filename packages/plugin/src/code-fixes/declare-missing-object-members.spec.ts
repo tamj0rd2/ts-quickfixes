@@ -94,7 +94,7 @@ describe('declareMissingObjectMembers', () => {
     expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
-  it('works for missing inherited members', () => {
+  it.only('works for missing inherited members', () => {
     const initializer = `{ name: 'tam' }`
     const [importedFilePath] = FsMocker.addFile(/* ts */ `
       export interface GrandParentType {
