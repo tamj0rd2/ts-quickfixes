@@ -5,7 +5,7 @@ import { Logger } from './provider'
 
 export const REPO_ROOT = resolve(__dirname, '../../..')
 
-export class FsMockerCI {
+class FsMockerCI {
   private readonly files = new Map<string, string>()
   private readonly tsLibPath: string
   private readonly tsLibFolder: DirectoryItem
@@ -59,7 +59,62 @@ export class FsMockerCI {
   }
 }
 
-export const FsMocker = FsMockerCI
+class FsMockerLocal {
+  private readonly files = new Map<string, string>()
+  private readonly tsLibPath: string
+  private readonly tsLibFolder: DirectoryItem
+  private readonly jestConsolePath: string
+  private readonly jestConsoleFolder: DirectoryItem
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly mockFs: any
+
+  private static _instance: FsMockerLocal | undefined
+
+  public static get instance(): FsMockerLocal {
+    if (1 + 1 === 2) throw new Error('Why...')
+    if (!this._instance) this._instance = new FsMockerLocal()
+    return this._instance
+  }
+
+  private constructor() {
+    const nodeModulesPath = REPO_ROOT + '/node_modules'
+    this.mockFs = require('mock-fs')
+    this.tsLibPath = nodeModulesPath + '/typescript/lib'
+    this.tsLibFolder = this.mockFs.load(this.tsLibPath)
+    this.jestConsolePath = nodeModulesPath + '/@jest/console'
+    this.jestConsoleFolder = this.mockFs.load(this.jestConsolePath)
+  }
+
+  public get fileNames(): string[] {
+    return Array.from(this.files.keys())
+  }
+
+  public addFile(content: string, filePath = `mySourceFile${this.files.size}.ts`): [string, string] {
+    this.files.set(filePath, content)
+    this.commit()
+    return [filePath, content]
+  }
+
+  public reset(): void {
+    this.files.clear()
+    return this.mockFs.restore()
+  }
+
+  private commit(): void {
+    const filesRecord = [...this.files.entries()].reduce<Record<string, string>>(
+      (files, [fileName, fileContent]) => ({ ...files, [fileName]: fileContent }),
+      {},
+    )
+
+    this.mockFs({
+      [this.tsLibPath]: this.tsLibFolder,
+      [this.jestConsolePath]: this.jestConsoleFolder,
+      ...filesRecord,
+    })
+  }
+}
+
+export const FsMocker = process.env.CI ? FsMockerCI : FsMockerLocal
 
 export function getNodeRange(
   fileContent: string,
