@@ -1,47 +1,109 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+import * as realFs from 'fs'
 import { resolve } from 'path'
-import _mockFs from 'mock-fs'
+import type { DirectoryItem } from 'mock-fs/lib/filesystem'
 import ts from 'typescript/lib/tsserverlibrary'
 import { Logger } from './provider'
 
 export const REPO_ROOT = resolve(__dirname, '../../..')
 
-export class FsMocker {
-  private static nodeModulesPath = REPO_ROOT + '/node_modules'
-  private static tsLibPath = FsMocker.nodeModulesPath + '/typescript/lib'
-  private static tsLibFolder = _mockFs.load(FsMocker.tsLibPath)
-  private static jestConsolePath = FsMocker.nodeModulesPath + '/@jest/console'
-  private static jestConsoleFolder = _mockFs.load(FsMocker.jestConsolePath)
+class FsMockerCI {
+  private readonly files = new Map<string, string>()
+  private readonly tsLibPath: string
+  private readonly tsLibFolder: DirectoryItem
+  private readonly jestConsolePath: string
+  private readonly jestConsoleFolder: DirectoryItem
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly mockFs: any
 
-  private static readonly files = new Map<string, string>()
+  private static _instance: FsMockerCI | undefined
 
-  public static get fileNames(): string[] {
+  public static get instance(): FsMockerCI {
+    if (!this._instance) this._instance = new FsMockerCI()
+    return this._instance
+  }
+
+  private constructor() {
+    const nodeModulesPath = REPO_ROOT + '/node_modules'
+    this.mockFs = require('mock-fs')
+    this.tsLibPath = nodeModulesPath + '/typescript/lib'
+    this.tsLibFolder = this.mockFs.load(this.tsLibPath)
+    this.jestConsolePath = nodeModulesPath + '/@jest/console'
+    this.jestConsoleFolder = this.mockFs.load(this.jestConsolePath)
+  }
+
+  public get fileNames(): string[] {
     return Array.from(this.files.keys())
   }
 
-  public static addFile(content: string, filePath = `mySourceFile${this.files.size}.ts`): [string, string] {
-    FsMocker.files.set(filePath, content)
-    FsMocker.commit()
+  public addFile(content: string, filePath = `mySourceFile${this.files.size}.ts`): [string, string] {
+    this.files.set(filePath, content)
+    this.commit()
     return [filePath, content]
   }
 
-  public static reset(): void {
+  public reset(): void {
     this.files.clear()
-    return _mockFs.restore()
+    return this.mockFs.restore()
   }
 
-  private static commit(): void {
-    const filesRecord = [...FsMocker.files.entries()].reduce<Record<string, string>>(
+  private commit(): void {
+    const filesRecord = [...this.files.entries()].reduce<Record<string, string>>(
       (files, [fileName, fileContent]) => ({ ...files, [fileName]: fileContent }),
       {},
     )
 
-    _mockFs({
-      [FsMocker.tsLibPath]: FsMocker.tsLibFolder,
-      [FsMocker.jestConsolePath]: FsMocker.jestConsoleFolder,
+    this.mockFs({
+      [this.tsLibPath]: this.tsLibFolder,
+      [this.jestConsolePath]: this.jestConsoleFolder,
       ...filesRecord,
     })
   }
 }
+
+export class FsMockerLocal {
+  private static _instance: FsMockerLocal | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly vol: any
+  private readonly files = new Map<string, string>()
+
+  public static get instance(): FsMockerLocal {
+    if (!this._instance) this._instance = new FsMockerLocal()
+    return this._instance
+  }
+
+  private constructor() {
+    const originalFs = { ...realFs }
+    const { ufs } = require('unionfs')
+    const { patchFs } = require('fs-monkey')
+    this.vol = require('memfs').vol
+    this.vol.mkdirSync(resolve(process.cwd()), { recursive: true })
+
+    // merge in memory and real fs together in ufs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ufs.use(this.vol as any).use(originalFs)
+
+    // patch the node fs functions to allow access to the merged file system
+    patchFs(ufs)
+  }
+
+  public get fileNames(): string[] {
+    return Array.from(this.files.keys())
+  }
+
+  public addFile(content: string): [string, string] {
+    const filePath = `sourcefile-${this.files.size}.ts`
+    this.files.set(filePath, content)
+    this.vol.writeFileSync(filePath, content)
+    return [filePath, content]
+  }
+
+  public reset(): void {
+    this.files.clear()
+  }
+}
+
+export const FsMocker = process.env.CI ? FsMockerCI : FsMockerLocal
 
 export function getNodeRange(
   fileContent: string,
@@ -64,11 +126,6 @@ export function createTestProgram(fileNames: string[], allowedErrorCodes: number
     baseUrl: REPO_ROOT,
   })
 
-  /** ===================================================================================/
-   * uncomment to enable diagnostics for the created typescript program.
-   * of course, if the typescript compilation has errors (other than the one we expect),
-   * parsing the AST will probably give very strange results/errors.
-   * ===================================================================================*/
   const diagnostics = ts.getPreEmitDiagnostics(program)
   const disallowedErrors = diagnostics.filter(({ code }) => !allowedErrorCodes.includes(code))
 

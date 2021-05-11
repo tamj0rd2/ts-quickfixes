@@ -3,11 +3,11 @@ import { TSH } from './helpers'
 import { createTestProgram, FsMocker, getNodeRange } from './test-helpers'
 
 describe('Helpers', () => {
-  afterEach(() => FsMocker.reset())
+  afterEach(() => FsMocker.instance.reset())
 
   describe('findChildNode', () => {
     it('can find child node that matches the given predicate', () => {
-      const [filePath] = FsMocker.addFile(/* ts */ `
+      const [filePath] = FsMocker.instance.addFile(/* ts */ `
         interface Target {}
       `)
 
@@ -20,7 +20,7 @@ describe('Helpers', () => {
 
   describe('findParentNode', () => {
     it('can find a parent node that matches the given predicate', () => {
-      const [filePath] = FsMocker.addFile(/* ts */ `
+      const [filePath] = FsMocker.instance.addFile(/* ts */ `
         interface Target {
           hello: string
         }
@@ -37,7 +37,7 @@ describe('Helpers', () => {
   describe('findNodeAtPosition', () => {
     it('finds the node that has an error at a specific location', () => {
       const initializer = '{ greeting: "hello" }'
-      const [filePath, fileContent] = FsMocker.addFile(/* ts */ `
+      const [filePath, fileContent] = FsMocker.instance.addFile(/* ts */ `
         interface TargetType {
           greeting: string
         }
@@ -80,7 +80,7 @@ describe('Helpers', () => {
     ]
 
     function getMembers(text: string): ReturnType<typeof TSH['getMembers']> {
-      const [filePath, fileContent] = FsMocker.addFile(text)
+      const [filePath, fileContent] = FsMocker.instance.addFile(text)
       const program = createTestProgram([filePath])
       const typeChecker = program.getTypeChecker()
       const sourceFile = program.getSourceFile(filePath)!
@@ -112,10 +112,8 @@ describe('Helpers', () => {
     })
 
     it('works when there is no intermediary type refernece', () => {
-      const [
-        filePath,
-        fileContent,
-      ] = FsMocker.addFile(/* ts */ `export const target: Record<'hello', string> = { hello: 'hi' }
+      const [filePath, fileContent] = FsMocker.instance
+        .addFile(/* ts */ `export const target: Record<'hello', string> = { hello: 'hi' }
       `)
       const program = createTestProgram([filePath])
       const typeChecker = program.getTypeChecker()
@@ -148,7 +146,7 @@ describe('Helpers', () => {
     }
 
     it('returns true if the symbols have the same members', () => {
-      const [filePath] = FsMocker.addFile(/* ts */ `
+      const [filePath] = FsMocker.instance.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age: number
@@ -164,7 +162,7 @@ describe('Helpers', () => {
     })
 
     it('returns true if the symbol to compare has extra members', () => {
-      const [filePath] = FsMocker.addFile(/* ts */ `
+      const [filePath] = FsMocker.instance.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age: number
@@ -181,7 +179,7 @@ describe('Helpers', () => {
     })
 
     it('returns false if the symbols do not have the same top level members', () => {
-      const [filePath] = FsMocker.addFile(/* ts */ `
+      const [filePath] = FsMocker.instance.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age: number
@@ -196,7 +194,7 @@ describe('Helpers', () => {
     })
 
     it('returns true if the symbol to compare is missing an optional member', () => {
-      const [filePath] = FsMocker.addFile(/* ts */ `
+      const [filePath] = FsMocker.instance.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age?: number
@@ -211,7 +209,7 @@ describe('Helpers', () => {
     })
 
     it('return false if the members are the same but the types are mismatched', () => {
-      const [filePath] = FsMocker.addFile(/* ts */ `
+      const [filePath] = FsMocker.instance.addFile(/* ts */ `
         interface Symbol1 {
           name: string
           age: number
@@ -227,7 +225,7 @@ describe('Helpers', () => {
     })
 
     it('returns true if the symbols are deeply compatible', () => {
-      const [filePath] = FsMocker.addFile(/* ts */ `
+      const [filePath] = FsMocker.instance.addFile(/* ts */ `
         interface NestedAsInterface {
           age: number
         }
@@ -247,7 +245,7 @@ describe('Helpers', () => {
     })
 
     it('returns false if the symbols are not deeply compatible', () => {
-      const [filePath] = FsMocker.addFile(/* ts */ `
+      const [filePath] = FsMocker.instance.addFile(/* ts */ `
         interface NestedAsInterface {
           age: number
         }
