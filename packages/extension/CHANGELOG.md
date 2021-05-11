@@ -1,3 +1,10 @@
+# [ts-quickfixes-extension-v1.13.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.12.0...ts-quickfixes-extension-v1.13.0) (2021-05-11)
+
+
+### Features
+
+* autofill objects returned by functions/methods ([0250906](https://github.com/tamj0rd2/ts-quickfixes/commit/02509064b2eac678e9af55fdfda4ce4a7ba5153b)), closes [#187](https://github.com/tamj0rd2/ts-quickfixes/issues/187)
+
 # [ts-quickfixes-extension-v1.12.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-extension-v1.11.0...ts-quickfixes-extension-v1.12.0) (2021-05-10)
 
 
