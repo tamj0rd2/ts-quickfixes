@@ -1,5 +1,4 @@
 import { resolve } from 'path'
-import _mockFs from 'mock-fs'
 import type { DirectoryItem } from 'mock-fs/lib/filesystem'
 import ts from 'typescript/lib/tsserverlibrary'
 import { Logger } from './provider'
@@ -12,6 +11,8 @@ export class FsMockerCI {
   private readonly tsLibFolder: DirectoryItem
   private readonly jestConsolePath: string
   private readonly jestConsoleFolder: DirectoryItem
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly mockFs: any
 
   private static _instance: FsMockerCI | undefined
 
@@ -22,10 +23,11 @@ export class FsMockerCI {
 
   private constructor() {
     const nodeModulesPath = REPO_ROOT + '/node_modules'
+    this.mockFs = require('mock-fs')
     this.tsLibPath = nodeModulesPath + '/typescript/lib'
-    this.tsLibFolder = _mockFs.load(this.tsLibPath)
+    this.tsLibFolder = this.mockFs.load(this.tsLibPath)
     this.jestConsolePath = nodeModulesPath + '/@jest/console'
-    this.jestConsoleFolder = _mockFs.load(this.jestConsolePath)
+    this.jestConsoleFolder = this.mockFs.load(this.jestConsolePath)
   }
 
   public get fileNames(): string[] {
@@ -40,7 +42,7 @@ export class FsMockerCI {
 
   public reset(): void {
     this.files.clear()
-    return _mockFs.restore()
+    return this.mockFs.restore()
   }
 
   private commit(): void {
@@ -49,7 +51,7 @@ export class FsMockerCI {
       {},
     )
 
-    _mockFs({
+    this.mockFs({
       [this.tsLibPath]: this.tsLibFolder,
       [this.jestConsolePath]: this.jestConsoleFolder,
       ...filesRecord,
@@ -80,11 +82,6 @@ export function createTestProgram(fileNames: string[], allowedErrorCodes: number
     baseUrl: REPO_ROOT,
   })
 
-  /** ===================================================================================/
-   * uncomment to enable diagnostics for the created typescript program.
-   * of course, if the typescript compilation has errors (other than the one we expect),
-   * parsing the AST will probably give very strange results/errors.
-   * ===================================================================================*/
   const diagnostics = ts.getPreEmitDiagnostics(program)
   const disallowedErrors = diagnostics.filter(({ code }) => !allowedErrorCodes.includes(code))
 
