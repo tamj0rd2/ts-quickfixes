@@ -7,6 +7,7 @@ import { Logger } from './provider'
 
 export const REPO_ROOT = resolve(__dirname, '../../..')
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 class FsMockerCI {
   private readonly files = new Map<string, string>()
   private readonly tsLibPath: string
@@ -103,7 +104,7 @@ export class FsMockerLocal {
   }
 }
 
-export const FsMocker = process.env.CI ? FsMockerCI : FsMockerLocal
+export const FsMocker = /*process.env.CI ? FsMockerCI :*/ FsMockerLocal
 
 export function getNodeRange(
   fileContent: string,
