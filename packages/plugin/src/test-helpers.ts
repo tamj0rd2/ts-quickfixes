@@ -1,26 +1,73 @@
+// import { vol } from 'memfs'
+// import * as realFs from 'fs'
+// import { ufs } from 'unionfs'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+// const { patchFs } = require('fs-monkey')
+
 import { resolve } from 'path'
-import _mockFs from 'mock-fs'
 import ts from 'typescript/lib/tsserverlibrary'
 import { Logger } from './provider'
+import _mockFs from 'mock-fs'
 
 export const REPO_ROOT = resolve(__dirname, '../../..')
 
-export class FsMocker {
+// class FsMockerLocal {
+//   private static isInitialized = false
+//   private static originalFs = { ...realFs }
+
+//   public static init(): void {
+//     if (this.isInitialized) return
+//     FsMockerLocal.isInitialized = true
+
+//     vol.mkdirSync(process.cwd(), { recursive: true })
+//     vol.mkdirSync(resolve(process.cwd(), 'fixtures'), { recursive: true })
+
+//     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+//     ufs.use(vol as any).use(FsMockerLocal.originalFs)
+//     patchFs(ufs)
+//   }
+
+//   private static readonly files = new Map<string, string>()
+
+//   public static get fileNames(): string[] {
+//     return Array.from(this.files.keys())
+//   }
+
+//   public static addFile(content: string): [string, string] {
+//     if (!this.isInitialized) throw new Error('You forgot to initialize me...')
+
+//     const filePath = resolve(process.cwd(), 'fixtures', `sourcefile-${this.files.size}.ts`)
+//     FsMockerLocal.files.set(filePath, content)
+//     vol.writeFileSync(filePath, content)
+
+//     return [filePath, content]
+//   }
+
+//   public static reset(): void {
+//     this.files.clear()
+//   }
+// }
+
+class FsMockerCI {
   private static nodeModulesPath = REPO_ROOT + '/node_modules'
-  private static tsLibPath = FsMocker.nodeModulesPath + '/typescript/lib'
-  private static tsLibFolder = _mockFs.load(FsMocker.tsLibPath)
-  private static jestConsolePath = FsMocker.nodeModulesPath + '/@jest/console'
-  private static jestConsoleFolder = _mockFs.load(FsMocker.jestConsolePath)
+  private static tsLibPath = FsMockerCI.nodeModulesPath + '/typescript/lib'
+  private static tsLibFolder = _mockFs.load(FsMockerCI.tsLibPath)
+  private static jestConsolePath = FsMockerCI.nodeModulesPath + '/@jest/console'
+  private static jestConsoleFolder = _mockFs.load(FsMockerCI.jestConsolePath)
 
   private static readonly files = new Map<string, string>()
+
+  public static init(): void {
+    return
+  }
 
   public static get fileNames(): string[] {
     return Array.from(this.files.keys())
   }
 
   public static addFile(content: string, filePath = `mySourceFile${this.files.size}.ts`): [string, string] {
-    FsMocker.files.set(filePath, content)
-    FsMocker.commit()
+    FsMockerCI.files.set(filePath, content)
+    FsMockerCI.commit()
     return [filePath, content]
   }
 
@@ -30,18 +77,21 @@ export class FsMocker {
   }
 
   private static commit(): void {
-    const filesRecord = [...FsMocker.files.entries()].reduce<Record<string, string>>(
+    const filesRecord = [...FsMockerCI.files.entries()].reduce<Record<string, string>>(
       (files, [fileName, fileContent]) => ({ ...files, [fileName]: fileContent }),
       {},
     )
 
     _mockFs({
-      [FsMocker.tsLibPath]: FsMocker.tsLibFolder,
-      [FsMocker.jestConsolePath]: FsMocker.jestConsoleFolder,
+      [FsMockerCI.tsLibPath]: FsMockerCI.tsLibFolder,
+      [FsMockerCI.jestConsolePath]: FsMockerCI.jestConsoleFolder,
       ...filesRecord,
     })
   }
 }
+
+export const FsMocker = FsMockerCI
+// export const FsMocker = process.env.CI === 'true' ? FsMockerCI : FsMockerLocal
 
 export function getNodeRange(
   fileContent: string,
@@ -87,8 +137,8 @@ export function createTestProgram(fileNames: string[], allowedErrorCodes: number
   return program
 }
 
-export function createImportStatement(importName: string, importFilePath: string): string {
-  return `import { ${importName} } from './${importFilePath.replace('.ts', '')}'`
+export function createImportStatement(importName: string, absoluteFilePath: string): string {
+  return `import { ${importName} } from '${absoluteFilePath.replace('.ts', '')}'`
 }
 
 export function createDummyLogger(enableLogging = false): Logger {
