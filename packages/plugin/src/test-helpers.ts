@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+import * as realFs from 'fs'
 import { resolve } from 'path'
 import type { DirectoryItem } from 'mock-fs/lib/filesystem'
 import ts from 'typescript/lib/tsserverlibrary'
@@ -59,58 +61,45 @@ class FsMockerCI {
   }
 }
 
-class FsMockerLocal {
-  private readonly files = new Map<string, string>()
-  private readonly tsLibPath: string
-  private readonly tsLibFolder: DirectoryItem
-  private readonly jestConsolePath: string
-  private readonly jestConsoleFolder: DirectoryItem
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private readonly mockFs: any
-
+export class FsMockerLocal {
   private static _instance: FsMockerLocal | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly vol: any
+  private readonly files = new Map<string, string>()
 
   public static get instance(): FsMockerLocal {
-    if (1 + 1 === 2) throw new Error('Why...')
     if (!this._instance) this._instance = new FsMockerLocal()
     return this._instance
   }
 
   private constructor() {
-    const nodeModulesPath = REPO_ROOT + '/node_modules'
-    this.mockFs = require('mock-fs')
-    this.tsLibPath = nodeModulesPath + '/typescript/lib'
-    this.tsLibFolder = this.mockFs.load(this.tsLibPath)
-    this.jestConsolePath = nodeModulesPath + '/@jest/console'
-    this.jestConsoleFolder = this.mockFs.load(this.jestConsolePath)
+    const originalFs = { ...realFs }
+    const { ufs } = require('unionfs')
+    const { patchFs } = require('fs-monkey')
+    this.vol = require('memfs').vol
+    this.vol.mkdirSync(resolve(process.cwd()), { recursive: true })
+
+    // merge in memory and real fs together in ufs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ufs.use(this.vol as any).use(originalFs)
+
+    // patch the node fs functions to allow access to the merged file system
+    patchFs(ufs)
   }
 
   public get fileNames(): string[] {
     return Array.from(this.files.keys())
   }
 
-  public addFile(content: string, filePath = `mySourceFile${this.files.size}.ts`): [string, string] {
+  public addFile(content: string): [string, string] {
+    const filePath = `sourcefile-${this.files.size}.ts`
     this.files.set(filePath, content)
-    this.commit()
+    this.vol.writeFileSync(filePath, content)
     return [filePath, content]
   }
 
   public reset(): void {
     this.files.clear()
-    return this.mockFs.restore()
-  }
-
-  private commit(): void {
-    const filesRecord = [...this.files.entries()].reduce<Record<string, string>>(
-      (files, [fileName, fileContent]) => ({ ...files, [fileName]: fileContent }),
-      {},
-    )
-
-    this.mockFs({
-      [this.tsLibPath]: this.tsLibFolder,
-      [this.jestConsolePath]: this.jestConsoleFolder,
-      ...filesRecord,
-    })
   }
 }
 
