@@ -14,6 +14,10 @@ export class FsMocker {
 
   private static readonly files = new Map<string, string>()
 
+  public static init(): void {
+    return
+  }
+
   public static get fileNames(): string[] {
     return Array.from(this.files.keys())
   }
