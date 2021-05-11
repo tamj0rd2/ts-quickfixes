@@ -90,14 +90,16 @@ describe('Acceptance tests', () => {
       const testingDocument = await vscode.workspace.openTextDocument(testFileUri)
       await vscode.window.showTextDocument(testingDocument)
 
+      const methodReturnAction = await getCodeAction(testingDocument, `return {}`, ACTION_NAME)
+      await vscode.workspace.applyEdit(methodReturnAction.edit!)
+      expect(getAllDocumentText(testingDocument)).toContain(`{\n    status: 'todo'\n}`)
+
       const constructorAction = await getCodeAction(testingDocument, `{ timeout: 456 }`, ACTION_NAME)
       await vscode.workspace.applyEdit(constructorAction.edit!)
 
-      const methodAction = await getCodeAction(testingDocument, `makeRequest({})`, ACTION_NAME)
-      await vscode.workspace.applyEdit(methodAction.edit!)
-
-      const documentText = getAllDocumentText(testingDocument)
-      expect(documentText).toContain(await readFixture('new-http-client'))
+      const methodCallAction = await getCodeAction(testingDocument, `makeRequest({})`, ACTION_NAME)
+      await vscode.workspace.applyEdit(methodCallAction.edit!)
+      expect(getAllDocumentText(testingDocument)).toContain(await readFixture('new-http-client'))
     })
   })
 })

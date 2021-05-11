@@ -19,6 +19,10 @@ situations where a nested object has missing members:
 
 ![Missing constructor members](gifs/missing-constructor-argument-members.gif)
 
+#### Missing function/method return members
+
+![Missing function/method return members](gifs/missing-method-return-members.gif)
+
 ## Requirements
 
 N/A

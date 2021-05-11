@@ -57,6 +57,10 @@ export namespace DeclareMissingObjectMembers {
       return errorNode
     }
 
+    if (ts.isReturnStatement(errorNode)) {
+      return TSH.cast(errorNode.expression, ts.isObjectLiteralExpression)
+    }
+
     throw new Error(`Unhandled errorNode type ${ts.SyntaxKind[errorNode.kind]}`)
   }
 
@@ -73,7 +77,7 @@ export namespace DeclareMissingObjectMembers {
       const previousNode = relevantNodes[0]
       const node = previousNode.parent
 
-      if (ts.isVariableDeclaration(node)) {
+      if (ts.isVariableDeclaration(node) || ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
         const identifier = TSH.cast(node.name, ts.isIdentifier)
         return { relevantNodes, topLevelSymbol: TSH.deref(ts, typeChecker, identifier) }
       }
@@ -97,7 +101,7 @@ export namespace DeclareMissingObjectMembers {
       relevantNodes.unshift(node)
     }
 
-    throw new Error('Could find first related type declaration')
+    throw new Error('Could not find first related type declaration')
   }
 
   function deriveExpectedSymbolFromRelatedNodes(
@@ -128,6 +132,12 @@ export namespace DeclareMissingObjectMembers {
       }
 
       if (ts.isFunctionLike(trackedDeclaration)) {
+        if (ts.isBlock(node)) return trackedSymbol
+
+        if (ts.isReturnStatement(node)) {
+          return TSH.deref(ts, typeChecker, trackedDeclaration.type)
+        }
+
         return TSH.getTypeForCallArgument(ts, typeChecker, trackedDeclaration, node)
       }
 

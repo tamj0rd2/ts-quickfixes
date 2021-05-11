@@ -292,53 +292,97 @@ describe('declareMissingObjectMembers', () => {
     expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
-  it('works for class constructors', () => {
-    const initializer = '{}'
+  it('works for function returns', () => {
     const [filePath, fileContent] = FsMocker.instance.addFile(/* ts */ `
       interface TargetType {
         greeting: string
         name: string
       }
 
-      class MyClass {
-        constructor(target: TargetType) {}
+      function myFunc(): TargetType {
+        return {}
       }
-
-      new MyClass(${initializer})
     `)
 
     const newText = getNewText({
       filePath,
-      initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
+      initializerPos: getNodeRange(fileContent, '{}', { index: 0 }),
+      errorPos: getNodeRange(fileContent, 'return {}'),
     })
 
     expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
   })
 
-  it('works for method calls', () => {
-    const initializer = '{}'
-    const [filePath, fileContent] = FsMocker.instance.addFile(/* ts */ `
-      interface TargetType {
-        greeting: string
-        name: string
-      }
+  describe('classes', () => {
+    it('works for class constructors', () => {
+      const initializer = '{}'
+      const [filePath, fileContent] = FsMocker.instance.addFile(/* ts */ `
+        interface TargetType {
+          greeting: string
+          name: string
+        }
+  
+        class MyClass {
+          constructor(target: TargetType) {}
+        }
+  
+        new MyClass(${initializer})
+      `)
 
-      class MyClass {
-        public method(targetType: TargetType) {}
-      }
+      const newText = getNewText({
+        filePath,
+        initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
+      })
 
-      new MyClass().method(${initializer})
-    `)
-
-    const newText = getNewText({
-      filePath,
-      initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
+      expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
     })
 
-    expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
-  })
+    it('works for method calls', () => {
+      const initializer = '{}'
+      const [filePath, fileContent] = FsMocker.instance.addFile(/* ts */ `
+        interface TargetType {
+          greeting: string
+          name: string
+        }
+  
+        class MyClass {
+          public method(targetType: TargetType) {}
+        }
+  
+        new MyClass().method(${initializer})
+      `)
 
-  it.todo('works for function and method returns')
+      const newText = getNewText({
+        filePath,
+        initializerPos: getNodeRange(fileContent, initializer, { index: 1 }),
+      })
+
+      expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
+    })
+
+    it('works for method returns', () => {
+      const [filePath, fileContent] = FsMocker.instance.addFile(/* ts */ `
+        interface TargetType {
+          greeting: string
+          name: string
+        }
+
+        class MyClass {
+          public myMethod(): TargetType {
+            return {}
+          }
+        }
+      `)
+
+      const newText = getNewText({
+        filePath,
+        initializerPos: getNodeRange(fileContent, '{}', { index: 0 }),
+        errorPos: getNodeRange(fileContent, 'return {}'),
+      })
+
+      expect(newText).toMatchInitializer({ greeting: 'todo', name: 'todo' })
+    })
+  })
 
   describe('scope', () => {
     it('can use locals that are in scope', () => {

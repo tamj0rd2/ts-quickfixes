@@ -2,7 +2,9 @@
 class HttpClient {
   constructor(args: { timeout: number; baseUrl: string; operation: string }) {}
 
-  public makeRequest(args: { method: string, endpoint: string }) {}
+  public makeRequest(args: { method: string, endpoint: string }): { status: string } {
+    return {}
+  }
 }
 
 const baseUrl = 'https://www.example.com'
