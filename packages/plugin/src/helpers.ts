@@ -1,3 +1,5 @@
+const USE_SINGLE_QUOTE = true
+
 /** Typescript Helpers */
 export namespace TSH {
   export type ts = typeof import('typescript/lib/tsserverlibrary')
@@ -273,7 +275,7 @@ export namespace TSH {
 
       return ts
         .createPrinter(
-          { newLine: ts.NewLineKind.LineFeed },
+          { newLine: ts.NewLineKind.LineFeed, omitTrailingSemicolon: true },
           { substituteNode: (_, node) => (node === initializer ? replacedInitializer : node) },
         )
         .printNode(ts.EmitHint.Unspecified, initializer, sourceFile)
@@ -286,7 +288,9 @@ export namespace TSH {
       member: Member,
     ): ts.PropertyAssignment {
       const name = member.symbol.name
-      const nameNode = isValidPropertyName(name) ? name : ts.factory.createStringLiteral(name, true)
+      const nameNode = isValidPropertyName(name)
+        ? name
+        : ts.factory.createStringLiteral(name, USE_SINGLE_QUOTE)
       const initializerNode = isMatchingIdentifierInScope(ts, typeChecker, member.symbol, symbolsInScope)
         ? ts.factory.createIdentifier(member.symbol.name)
         : expressionFromMember(member, ts, typeChecker, symbolsInScope)
@@ -330,10 +334,18 @@ export namespace TSH {
         }
       }
 
-      if (type.isStringLiteral()) return ts.factory.createStringLiteral(type.value, true)
+      if (declaration && ts.isMethodSignature(declaration)) {
+        const argNames = typeChecker
+          .getSignatureFromDeclaration(declaration)
+          ?.parameters.map((p) => p.escapedName as string)
+
+        return createArrowFunction(ts, argNames)
+      }
+
+      if (type.isStringLiteral()) return ts.factory.createStringLiteral(type.value, USE_SINGLE_QUOTE)
       if (type.isNumberLiteral()) return ts.factory.createNumericLiteral(type.value)
 
-      if (type.flags & ts.TypeFlags.String) return ts.factory.createStringLiteral('todo', true)
+      if (type.flags & ts.TypeFlags.String) return ts.factory.createStringLiteral('todo', USE_SINGLE_QUOTE)
       if (type.flags & ts.TypeFlags.Number) return ts.factory.createNumericLiteral(0)
       if (type.flags & ts.TypeFlags.Boolean) return ts.factory.createFalse()
 
@@ -365,6 +377,33 @@ export namespace TSH {
       }
 
       return ts.factory.createNull()
+    }
+
+    function createArrowFunction(ts: ts, argNames: string[] = []): ts.ArrowFunction {
+      return ts.factory.createArrowFunction(
+        undefined,
+        undefined,
+        argNames?.map((name) =>
+          ts.factory.createParameterDeclaration(
+            undefined,
+            undefined,
+            undefined,
+            ts.factory.createIdentifier(name),
+          ),
+        ) ?? [],
+        undefined,
+        ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+        ts.factory.createBlock(
+          [
+            ts.factory.createThrowStatement(
+              ts.factory.createNewExpression(ts.factory.createIdentifier('Error'), undefined, [
+                ts.factory.createStringLiteral('Not yet implemented!', USE_SINGLE_QUOTE),
+              ]),
+            ),
+          ],
+          true,
+        ),
+      )
     }
   }
 

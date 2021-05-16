@@ -1,12 +1,6 @@
 import * as vscode from 'vscode'
 import { TEST_ENV_DIR } from '../paths'
-import {
-  getAllDocumentText,
-  getLineByText,
-  getVariableValue,
-  readFixture,
-  waitForResponse,
-} from './test-helpers'
+import { getAllDocumentText, getLineByText, readFixture, waitForResponse } from './test-helpers'
 
 describe('Acceptance tests', () => {
   beforeAll(() => {
@@ -27,8 +21,7 @@ describe('Acceptance tests', () => {
       const codeAction = await getCodeAction(testingDocument, `const ${variableName}`, ACTION_NAME)
       await vscode.workspace.applyEdit(codeAction.edit!)
 
-      const variableValue = getVariableValue(getAllDocumentText(testingDocument), variableName)
-      expect(variableValue).toStrictEqual(await readFixture(variableName))
+      expect(getAllDocumentText(testingDocument)).toContain(await readFixture(variableName))
     })
 
     it('declares missing members for Records', async () => {

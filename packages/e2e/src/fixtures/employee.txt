@@ -1,9 +1,11 @@
-{
+export const employee: Employee = {
     department: 'todo',
     firstName: 'todo',
     lastName: 'todo',
     birthday: new Date(),
+    age: 0,
     address: null,
-    mobileNumber: null,
-    status: null
+    getPaymentDetails: () => {
+        throw new Error('Not yet implemented!');
+    }
 }

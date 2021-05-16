@@ -1,16 +1,11 @@
 /* eslint-disable */
-interface PhoneNumber {
-  countryCode: string
-  phoneNumber: number
-}
-
 export interface Person {
   firstName: string
   lastName: string
   birthday: Date
+  age: number
   address: { city: string; postcode: string }
-  mobileNumber: PhoneNumber
-  status: 'Alive' | 'Dead'
+  getPaymentDetails(): { cardNumber: string }
 }
 
 interface Employee extends Person {

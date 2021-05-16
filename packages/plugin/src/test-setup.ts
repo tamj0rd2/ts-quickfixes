@@ -1,6 +1,13 @@
 import { TSH } from './helpers'
 
-export type ObjectProperties = { [K in string]: ObjectProperties | string | boolean | null | number }
+export class FunctionMember {
+  constructor(public readonly args: string, public readonly body: string) {}
+}
+
+export type ObjectProperties = {
+  [K in string]: ObjectProperties | string | boolean | null | number | FunctionMember
+}
+
 export interface BuildOpts {
   doNotFormatStrings?: boolean
 }
@@ -24,7 +31,7 @@ export class ObjectBuilder {
 
   private with(name: string, value: ObjectProperties[string], opts: BuildOpts): ObjectBuilder {
     const sanitizedName = TSH.isValidPropertyName(name) ? name : `'${name}'`
-    this.lines.push(`${this.indent}${sanitizedName}: ${this.formatValue(value, opts)}`)
+    this.lines.push(`${this.indent}${sanitizedName}: ${this.formatValue(value as ObjectProperties, opts)}`)
     return this
   }
 
@@ -35,8 +42,12 @@ export class ObjectBuilder {
     return ['{\n', ...this.lines.map((line) => extraIndent + line).join(',\n'), `\n${extraIndent}}`].join('')
   }
 
-  private formatValue(value: ObjectProperties[string], opts: BuildOpts): string {
+  private formatValue(value: ObjectProperties, opts: BuildOpts): string {
     if (value === null) return 'null'
+
+    if (value instanceof FunctionMember)
+      return `(${value.args}) => {\n${this.indent.repeat(2)}${value.body}\n${this.indent}}`
+
     if (typeof value === 'object') return ObjectBuilder.from(value).build(this.depth + 1)
     if (typeof value === 'string' && !opts.doNotFormatStrings) return `'${value}'`
     return value as string

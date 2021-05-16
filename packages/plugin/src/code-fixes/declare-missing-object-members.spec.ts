@@ -8,6 +8,7 @@ import {
   FsMocker,
   getNodeRange,
 } from '../test-helpers'
+import { FunctionMember } from '../test-setup'
 
 describe('declareMissingObjectMembers', () => {
   afterEach(() => FsMocker.instance.reset())
@@ -15,20 +16,21 @@ describe('declareMissingObjectMembers', () => {
   it('works for a variable declaration', () => {
     const initializer = `{ name: 'tam' }`
     const [filePath, fileContent] = FsMocker.instance.addFile(/* ts */ `
-        interface Goodbye {
-          'sweet-planet': string
-        }
+      interface Goodbye {
+        'sweet-planet': string
+      }
 
-        interface TargetType {
-          greeting: string
-          name: string
-          age: number
-          hello: { 'my/dear': string }
-          goodbye: Goodbye
-        }
-        
-        export const target: TargetType = ${initializer}
-      `)
+      interface TargetType {
+        greeting: string
+        name: string
+        age: number
+        hello: { 'my/dear': string }
+        goodbye: Goodbye
+        makeRequest(endpoint: string, method: string): boolean
+      }
+      
+      export const target: TargetType = ${initializer}
+    `)
 
     const newText = getNewText({
       filePath,
@@ -42,6 +44,10 @@ describe('declareMissingObjectMembers', () => {
       age: 0,
       hello: null,
       goodbye: null,
+      makeRequest: new FunctionMember(
+        'endpoint, method',
+        /* ts */ `throw new Error('Not yet implemented!');`,
+      ),
     })
   })
 
@@ -387,17 +393,17 @@ describe('declareMissingObjectMembers', () => {
   describe('scope', () => {
     const happyScopeCases = [
       [
-        'can use a local that are in scope whose implicit type is compatible',
+        'can use a local variable in scope whose implicit type is compatible',
         /* ts */ `const target = { greeting: 'hello', name: 'John Doe' }
         `,
       ],
       [
-        'can use a local in scope that are explicitly declared with an identical type',
+        'can use a local variable in scope that is explicitly declared with a matching type',
         /* ts */ `const target: { greeting: string; name: string } = {} as any
         `,
       ],
       [
-        'can use a local in scope that have been type cast to a matching type',
+        'can use a local variable in scope that has been type cast to a matching type',
         /* ts */ `const target = {} as { greeting: string; name: string }
         `,
       ],
