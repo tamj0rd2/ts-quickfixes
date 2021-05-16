@@ -385,7 +385,25 @@ describe('declareMissingObjectMembers', () => {
   })
 
   describe('scope', () => {
-    it('can use locals that are in scope', () => {
+    const happyScopeCases = [
+      [
+        'can use a local that are in scope whose implicit type is compatible',
+        /* ts */ `const target = { greeting: 'hello', name: 'John Doe' }
+        `,
+      ],
+      [
+        'can use a local in scope that are explicitly declared with an identical type',
+        /* ts */ `const target: { greeting: string; name: string } = {} as any
+        `,
+      ],
+      [
+        'can use a local in scope that have been type cast to a matching type',
+        /* ts */ `const target = {} as { greeting: string; name: string }
+        `,
+      ],
+    ]
+
+    it.each(happyScopeCases)('%s', () => {
       const initializer = '{}'
       const [filePath, fileContent] = FsMocker.instance.addFile(/* ts */ `
         interface TargetType {
