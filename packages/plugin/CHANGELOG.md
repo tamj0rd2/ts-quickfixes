@@ -1,3 +1,10 @@
+# [ts-quickfixes-plugin-v1.12.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.11.0...ts-quickfixes-plugin-v1.12.0) (2021-05-17)
+
+
+### Features
+
+* delcare missing members that are functions ([6635d5b](https://github.com/tamj0rd2/ts-quickfixes/commit/6635d5b4a2ccd8fbd2831ae280fd2f1bd8577ca0)), closes [#159](https://github.com/tamj0rd2/ts-quickfixes/issues/159)
+
 # [ts-quickfixes-plugin-v1.11.0](https://github.com/tamj0rd2/ts-quickfixes/compare/ts-quickfixes-plugin-v1.10.0...ts-quickfixes-plugin-v1.11.0) (2021-05-11)
 
 
