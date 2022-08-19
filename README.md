@@ -1,5 +1,7 @@
 # TS Quickfixes
 
+**I'm not maintaining this anymore. I believe most of these features are available in Typescript now anyway.**
+
 ## Features
 
 ### Declare missing members
